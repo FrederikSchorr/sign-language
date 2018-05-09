@@ -1,3 +1,9 @@
+"""
+Extract image features with InceptionV3
+
+Code based on:
+https://github.com/harvitronix/five-video-classification-methods
+"""
 
 from keras.preprocessing import image
 from keras.applications.inception_v3 import InceptionV3, preprocess_input
