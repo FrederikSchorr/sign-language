@@ -7,10 +7,13 @@ https://github.com/harvitronix/five-video-classification-methods
 import csv
 import numpy as np
 import pandas as pd
+
 import random
+
 import glob
 import os.path
 import sys
+
 import operator
 import threading
 
@@ -47,28 +50,25 @@ class DataSet():
 
         # Get the data.
         self.dfTrain = self.get_data(os.path.join(sPath, "train"))
+        self.nTrain = len(self.dfTrain)
+
         self.dfTest = self.get_data(os.path.join(sPath, "test"))
+        self.nTest = len(self.dfTest)
 
         # Get the classes.
-        self.a1Classes = np.sort(self.dfTrain.sWord.unique())
-        self.nClasses = len(self.a1Classes)
+        self.liClasses = list(np.sort(self.dfTrain.sClass.unique()))
+        self.nClasses = len(self.liClasses)
 
 
     @staticmethod
-    def get_data(sPath):
+    def get_data(sPathData):
         """Load filenames in all subdirectories"""
-        dfFiles = pd.DataFrame(glob.glob(os.path.join(sPath, "**"), recursive=True), \
+        
+        dfFiles = pd.DataFrame(glob.glob(os.path.join(sPathData, "*", "*.npy")), 
             dtype=str, columns=["sPath"])
 
-        # extract file names
-        dfFiles["sFile"] = dfFiles.sPath.apply(lambda s: s.split("/")[-1])
-
-        # drop files/folders without extension
-        dfFiles.loc[dfFiles.sFile.apply(lambda s: len(s.split("."))<=1),:] = None
-        dfFiles.dropna(inplace=True)
-
-        # extract word
-        dfFiles["sWord"] = dfFiles.sFile.apply(lambda s: s.split("-")[0])
+        # extract class names
+        dfFiles["sClass"] = dfFiles.sPath.apply(lambda s: s.split("/")[-2])
 
         return dfFiles
            
@@ -77,12 +77,12 @@ class DataSet():
         """Given a class as a string, return its number in the classes
         list. This lets us encode and one-hot it for training."""
         # Encode it first.
-        label_encoded = self.a1Classes.index(class_str)
+        label_encoded = self.liClasses.index(class_str)
 
         # Now one-hot it.
-        label_hot = to_categorical(label_encoded, len(self.a1Classes))
+        label_hot = to_categorical(label_encoded, self.nClasses)
 
-        assert len(label_hot) == len(self.a1Classes)
+        assert len(label_hot) == self.nClasses
 
         return label_hot
 
@@ -97,25 +97,19 @@ class DataSet():
         elif sTrain_test == "test": dfFiles = self.dfTest
         else: raise ValueError("Specify train oder test dataset")
 
-        print("Creating %s generator with %d samples in %d categories" % \
-            (sTrain_test, dfFiles.shape[0], len(self.a1Classes)))
+        print("Creating <%s> generator with %d samples in %d classes" % \
+            (sTrain_test, dfFiles.shape[0], self.nClasses))
 
         while 1:
             X, y = [], []
 
             # Generate batch_size samples.
-            for _ in range(batch_size):
-
-                # Get a random sample.
-                seFile = random.choice(dfFiles)
+            for _, seFile in dfFiles.sample(batch_size).iterrows():
 
                 # Get the sequence from disk.
-                liFeatures = np.load(seFile.sPath)
-
-                if liFeatures is None:
-                    raise ValueError("Can't find features. Did you generate them?")
-
-                X.append(liFeatures)
-                y.append(self.get_class_one_hot(seFile.sWord))
+                arFeatures = np.load(str(seFile.sPath))
+                
+                X.append(arFeatures)
+                y.append(self.get_class_one_hot(str(seFile.sClass)))
 
             yield np.array(X), np.array(y)
