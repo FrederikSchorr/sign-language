@@ -16,38 +16,46 @@ from keras.layers import LSTM, Dense, Dropout
 from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
 
-from datagenerator import DataSet
+from featuregenerator import FeatureGenerator
 
 
-def video2frames(sListFile, sVideoDir, sFrameDir, fVal = 0.2, nFramesNorm = 20):
-    """ Extract frames from videos """
-    dfFiles = pd.read_csv(
-        os.path.join(sVideoDir, sListFile), 
+def prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = None):
+    dfFiles = pd.read_csv(sListFile, 
         sep=" ", header=None, 
         names=["sVideoPath", "s2", "nLabel"])
+
+    # reduce sample for testing purpose
+    if nLabels != None: dfFiles = dfFiles.loc[dfFiles.nLabel <= nLabels, :].copy()
 
     seLabels = dfFiles.groupby("nLabel").size().sort_values(ascending=False)
     print("%d videos, with %d labels, occuring between %d-%d times" % \
         (len(dfFiles), len(seLabels), min(seLabels), max(seLabels)))
 
     # split train vs val data
-    dfFiles["sTrain_val"] = "train"
+    dfFiles.loc[:,"sTrain_val"] = "train"
     for g in dfFiles.groupby("nLabel"):
         pos = g[1].sample(frac = fVal).index
         dfFiles.loc[pos, "sTrain_val"] = "val"
     print(dfFiles.groupby("sTrain_val").size())
 
-    # reduce sample for testing purpose
-    dfFiles = dfFiles.query("nLabel <= 3")
-
     # target directories
     seDir3 = dfFiles.sVideoPath.apply(lambda s: s.split("/")[2])
     seDir3 = seDir3.apply(lambda s: s.split(".")[0])
-    dfFiles["sFrameDir"] = dfFiles.sTrain_val + "/" + dfFiles.nLabel.astype("str") + "/" + seDir3
+    dfFiles.loc[:, "sFrameDir"] = dfFiles.sTrain_val + "/" + dfFiles.nLabel.astype("str") + "/" + seDir3
+
+    sFilesListPath = sLogDir + "/" + time.strftime("%Y%m%d-%H%M") + "-list.csv"
+    print("Save list to %s" % sFilesListPath)
+    dfFiles.to_csv(sFilesListPath)
+    return dfFiles
+
+
+def video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm = 20):
+    """ Extract frames from videos """
     
     # prepare frame counting
-    dfFiles["nFrames"] = 0
+    dfFiles.loc[:, "nFrames"] = 0
     nFramesTotal = len(glob.glob(os.path.join(sFrameDir, "*/*/*/*.jpg")))
+    assert(nFramesTotal == 0) # risk that video is extracted into train PLUS val directory
     nCounter = 0
 
     # extract frames from each video
@@ -59,7 +67,7 @@ def video2frames(sListFile, sVideoDir, sFrameDir, fVal = 0.2, nFramesNorm = 20):
 
         # create frame directory for each video
         sDir = os.path.join(sFrameDir, seVideo.sFrameDir)
-        os.makedirs(sDir)
+        os.makedirs(sDir, exist_ok=True)
         
         # determine length of video in sec and deduce frame rate
         fVideoSec = int(check_output(["mediainfo", '--Inform=Video;%Duration%', sVideoPath]))/1000.0
@@ -83,27 +91,48 @@ def video2frames(sListFile, sVideoDir, sFrameDir, fVal = 0.2, nFramesNorm = 20):
     nFramesTotal = len(glob.glob(os.path.join(sFrameDir, "*/*/*/*.jpg"))) - nFramesTotal
     print("%d frames extracted from %d videos" % (nFramesTotal, len(dfFiles)))
 
-    return dfFiles
+    return
 
 
-def frames2features(dfFiles, sFrameDir, sFeatureDir):
+def frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels=None):
     """ Use pretrained CNN to calculate features from video-frames """
+
+    sCurrentDir = os.getcwd()
+    # get list of directories with frames
+    os.chdir(sFrameDir)
+    dfVideos = pd.DataFrame(glob.glob("train/*/*"), dtype=str, columns=["sFrameDir"])
+    dfVideos = pd.concat([dfVideos,
+               pd.DataFrame(glob.glob("val/*/*"), dtype=str, columns=["sFrameDir"])])
+    os.chdir(sCurrentDir)
+    print("Found %d directories with frames" % len(dfVideos))
+
+    # eventually restrict to first nLabels
+    if nLabels != None:
+        dfVideos.loc[:,"sLabel"] = dfVideos.sFrameDir.apply(lambda s: s.split("/")[-2])
+        liLabels = sorted(dfVideos.sLabel.unique())[:nLabels]
+        dfVideos = dfVideos[dfVideos["sLabel"].isin(liLabels)]
+        print("Extracting features from %d directories (%d Labels)" % (len(dfVideos), nLabels))
 
     # get the InceptionV3 model
     cnn = InceptionV3_features()
 
     # feed all frames into cnn, save results in file per video
     nCounter = 0
-    for pos, seVideo in dfFiles.iterrows():
+    for _, seVideo in dfVideos.iterrows():
 
         # save resulting list of features in file in "data/2-feature/train/label/video.npy"
         sFeaturePath = os.path.join(sFeatureDir, seVideo.sFrameDir + ".npy")
-        print("%5d | Extracting features to %s" % (nCounter, sFeaturePath))
+        if (os.path.exists(sFeaturePath)):
+            # if feature already etracted, skip
+            print("%5d | Features %s already exist" % (nCounter, sFeaturePath))
+            continue
         os.makedirs(os.path.dirname(sFeaturePath), exist_ok=True)
 
-        # retrieve frame files
-        sFrames = glob.glob(os.path.join(sFrameDir, seVideo.sFrameDir, "*.jpg"))
-        
+        # retrieve frame files - in ascending order
+        sFrames = sorted(glob.glob(os.path.join(sFrameDir, seVideo.sFrameDir, "*.jpg")))
+        print("%5d | Extracting features from %d frames to %s" % (nCounter, len(sFrames), sFeaturePath))
+        assert(len(sFrames) == nFramesNorm)
+
         # run cnn on each frame, collect the resulting features
         liFeatures = []
         for sFrame in sFrames:
@@ -115,13 +144,13 @@ def frames2features(dfFiles, sFrameDir, sFeatureDir):
     return
 
 
-def train(sFeatureDir, sModelDir, sLogDir, sModel, nFramesNorm = 20, nFeatureLength = 2048,
+def train(sFeatureDir, sModelDir, sLogDir, nFramesNorm = 20, nFeatureLength = 2048,
           saved_model=None, nBatchSize=16, nEpoch=100):
 
     # Get generators.
-    data = DataSet(sFeatureDir, "train", "val")
-    train_generator = data.frame_generator("train", nBatchSize)
-    val_generator = data.frame_generator("val", nBatchSize)
+    oFeatureGenerator = FeatureGenerator(sFeatureDir, "train", "val")
+    train_generator = oFeatureGenerator.frame_generator("train", nBatchSize, nFramesNorm, nFeatureLength)
+    val_generator = oFeatureGenerator.frame_generator("val", nBatchSize, nFramesNorm, nFeatureLength)
 
     # Build a simple LSTM network. We pass the extracted features from
     # our CNN to this model     
@@ -131,11 +160,11 @@ def train(sFeatureDir, sModelDir, sLogDir, sModel, nFramesNorm = 20, nFeatureLen
                     dropout=0.5))
     keModel.add(Dense(256, activation='relu'))
     keModel.add(Dropout(0.5))
-    keModel.add(Dense(data.nClasses, activation='softmax'))
+    keModel.add(Dense(oFeatureGenerator.nClasses, activation='softmax'))
     keModel.summary()
 
     # Now compile the network.
-    optimizer = Adam(lr=1e-5, decay=1e-6)
+    optimizer = Adam(lr=1e-6, decay=1e-7)
     keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
     # Helper: TensorBoard
@@ -145,7 +174,7 @@ def train(sFeatureDir, sModelDir, sLogDir, sModel, nFramesNorm = 20, nFeatureLen
     #early_stopper = EarlyStopping(patience=5)
 
     # Helper: Save results.
-    sLog = time.strftime("%Y%m%d-%H%M") + "-" + sModel + "-" + str(data.nTrain) + "in" + str(data.nClasses)
+    sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + str(oFeatureGenerator.nTrain) + "in" + str(oFeatureGenerator.nClasses)
     csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '.log'))
 
     # Helper: Save the model.
@@ -156,7 +185,7 @@ def train(sFeatureDir, sModelDir, sLogDir, sModel, nFramesNorm = 20, nFeatureLen
     # Fit!
     keModel.fit_generator(
         generator=train_generator,
-        steps_per_epoch=data.nTrain // nBatchSize,
+        steps_per_epoch=oFeatureGenerator.nTrain // nBatchSize,
         epochs=nEpoch,
         verbose=1,
         #callbacks=[tb, early_stopper, csv_logger, checkpointer],
@@ -165,41 +194,35 @@ def train(sFeatureDir, sModelDir, sLogDir, sModel, nFramesNorm = 20, nFeatureLen
         validation_steps=40,
         workers=4
     )    
+    keModel.save(sModelDir + "/" + sLog + ".h5")
 
 
 def main():
    
     # directories
     sVideoDir = "datasets/04-chalearn"
-    sListFile = "train_list.txt"
+    sListFile = sVideoDir + "/train_list.txt"
     sFrameDir = "03-chalearn/data/1-frame"
     sFeatureDir = "03-chalearn/data/2-feature"
     sModelDir = "03-chalearn/data/3-model"
-    sLogDir = "03-chalearn/data/9-log/"
+    sLogDir = "03-chalearn/data/9-log"
 
-    fVal = 0.2 # percentage of validation set
+    nLabels = 10
     nFramesNorm = 20 # number of frames per video for feature calculation
-
-    sModel = 'lstm'
     nFeatureLength = 2048 # output features from CNN
-    nBatchSize = 16
-    nEpoch = 3
 
-    print("Current directory:", os.getcwd())
+    print("\nStarting Chalearn extraction & train in directory:", os.getcwd())
 
     # extract frames from videos
-    dfFiles = video2frames(sListFile, sVideoDir, sFrameDir, fVal, nFramesNorm)
-    sListPath = sLogDir + "/" + time.strftime("%Y%m%d-%H%M") + "-list.csv"
-    print("Save list to %s" % sListPath)
-    dfFiles.to_csv(sListPath)
-
+    #dfFiles = prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = nLabels)
+    #video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm)
+    
     # calculate features from frames
-    #dfFiles = pd.read_csv(sLogDir + "/20180518-0743-list.csv")
-    frames2features(dfFiles, sFrameDir, sFeatureDir)
+    #frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels = nLabels)
 
     # train the LSTM network
-    train(sFeatureDir, sModelDir, sLogDir, sModel, nFramesNorm, nFeatureLength = nFeatureLength,
-          saved_model=None, nBatchSize=nBatchSize, nEpoch=nEpoch)
+    train(sFeatureDir, sModelDir, sLogDir, nFramesNorm, nFeatureLength = nFeatureLength,
+          saved_model=None, nBatchSize=8, nEpoch=500)
 
 if __name__ == '__main__':
     main()

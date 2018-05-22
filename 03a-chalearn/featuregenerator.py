@@ -37,7 +37,7 @@ def threadsafe_generator(func):
         return threadsafe_iterator(func(*a, **kw))
     return gen
 
-class DataSet():
+class FeatureGenerator():
 
     def __init__(self, sPath, sTrain, sTest):
         """Constructor.
@@ -58,6 +58,8 @@ class DataSet():
         # Get the classes.
         self.liClasses = list(np.sort(self.dfTrain.sClass.unique()))
         self.nClasses = len(self.liClasses)
+        print("%d train samples + %d test samples in %d classes" % \
+            (self.nTrain, self.nTest, self.nClasses))
 
 
     @staticmethod
@@ -88,7 +90,7 @@ class DataSet():
 
 
     @threadsafe_generator
-    def frame_generator(self, sTrain_test="train", batch_size=32):
+    def frame_generator(self, sTrain_test, batch_size, nFramesNorm, nFeatureLength):
         """Return a generator that we can use to train on. There are
         a couple different things we can return:
         """
@@ -103,11 +105,13 @@ class DataSet():
         while 1:
             X, y = [], []
 
-            # Generate batch_size samples.
+            # Generate batch_size samples - think this to random - need to improve
             for _, seFile in dfFiles.sample(batch_size).iterrows():
 
                 # Get the sequence from disk.
                 arFeatures = np.load(str(seFile.sPath))
+                if (arFeatures.shape != (nFramesNorm, nFeatureLength)):
+                    print("Error: %s has wrong shape %s" % (seFile.sPath, arFeatures.shape))
                 
                 X.append(arFeatures)
                 y.append(self.get_class_one_hot(str(seFile.sClass)))
