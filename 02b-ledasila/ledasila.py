@@ -1,8 +1,8 @@
 """
-Classify human motion videos from ChaLearn dataset
+Classify human motion videos from LedaSila dataset
 
-ChaLearn dataset:
-http://chalearnlap.cvc.uab.es/dataset/21/description/
+Sign language video files copyright Alpen Adria Universität Klagenfurt 
+http://ledasila.aau.at
 
 Code based on:
 https://github.com/harvitronix/five-video-classification-methods
@@ -30,77 +30,68 @@ from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
 
 
-def prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = None):
-    dfFiles = pd.read_csv(sListFile, 
-        sep=" ", header=None, 
-        names=["sVideoPath", "s2", "nLabel"])
+def video2frames(sVideoDir, sFrameDir, sFeatureDir, nFramesNorm, nMinOccur, fVal):
+      
+    # load all video file names
+    dfFiles = pd.DataFrame(glob.glob(sVideoDir + "/*/*.mp4"), dtype=str, columns=["sPath"])
 
-    # reduce sample for testing purpose
-    if nLabels != None: dfFiles = dfFiles.loc[dfFiles.nLabel <= nLabels, :].copy()
+    # extract file names
+    dfFiles["sFile"] = dfFiles.sPath.apply(lambda s: s.split("/")[-1])
 
-    seLabels = dfFiles.groupby("nLabel").size().sort_values(ascending=False)
-    print("%d videos, with %d labels, occuring between %d-%d times" % \
-        (len(dfFiles), len(seLabels), min(seLabels), max(seLabels)))
+    # extract word
+    dfFiles["sWord"] = dfFiles.sFile.apply(lambda s: s.split("-")[0])
+    print("%d videos, with %d unique words" % (dfFiles.shape[0], dfFiles.sWord.unique().shape[0]))
 
-    # split train vs val data
-    dfFiles.loc[:,"sTrain_val"] = "train"
-    for g in dfFiles.groupby("nLabel"):
+    # select videos with min n occurences
+    dfWord_freq = dfFiles.groupby("sWord").size().sort_values(ascending=False).reset_index(name="nCount")
+    dfWord_top = dfWord_freq.loc[dfWord_freq.nCount >= nMinOccur, :]
+    #print(dfWord_top)
+
+    dfVideos = pd.merge(dfFiles, dfWord_top, how="right", on="sWord")
+    print("Selected %d videos, %d unique words, min %d occurences" % 
+        (dfVideos.shape[0], dfVideos.sWord.unique().shape[0], dfWord_top.nCount.min()))
+
+    # split train vs test data
+    dfVideos["sTrain_val"] = "train"
+
+    for g in dfVideos.groupby("sWord"):
         pos = g[1].sample(frac = fVal).index
-        dfFiles.loc[pos, "sTrain_val"] = "val"
-    print(dfFiles.groupby("sTrain_val").size())
+        #print(pos)
+        dfVideos.loc[pos, "sTrain_val"] = "val"
 
-    # target directories
-    seDir3 = dfFiles.sVideoPath.apply(lambda s: s.split("/")[2])
-    seDir3 = seDir3.apply(lambda s: s.split(".")[0])
-    dfFiles.loc[:, "sFrameDir"] = dfFiles.sTrain_val + "/" + dfFiles.nLabel.astype("str") + "/" + seDir3
+    print(dfVideos.groupby("sTrain_val").size())
 
-    sFilesListPath = sLogDir + "/" + time.strftime("%Y%m%d-%H%M") + "-list.csv"
-    print("Save list to %s" % sFilesListPath)
-    dfFiles.to_csv(sFilesListPath)
-    return dfFiles
-
-
-def video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm = 20):
-    """ Extract frames from videos """
-    
-    # prepare frame counting
-    dfFiles.loc[:, "nFrames"] = 0
+    # check for already existing image frames
     nFramesTotal = len(glob.glob(os.path.join(sFrameDir, "*/*/*/*.jpg")))
     assert(nFramesTotal == 0) # risk that video is extracted into train PLUS val directory
-    nCounter = 0
 
     # extract frames from each video
-    print("Extract frames from %d videos (%d frames) ..." % (len(dfFiles), nFramesNorm))
-    for pos, seVideo in dfFiles.iterrows():
+    nCounter = 0
+    for pos, seVideo in dfVideos.iterrows():
         
-        # source path
-        sVideoPath = os.path.join(sVideoDir, seVideo.sVideoPath)
-
-        # create frame directory for each video
-        sDir = os.path.join(sFrameDir, seVideo.sFrameDir)
+        # for each video create separate directory in frame/train/label
+        sDir = os.path.join(sFrameDir, seVideo.sTrain_val, seVideo.sWord, seVideo.sFile.split(".")[0])
         os.makedirs(sDir, exist_ok=True)
-        
+        dfVideos.loc[pos, "sPathFrames"] = sDir
+
         # determine length of video in sec and deduce frame rate
-        fVideoSec = int(check_output(["mediainfo", '--Inform=Video;%Duration%', sVideoPath]))/1000.0
+        fVideoSec = int(check_output(["mediainfo", '--Inform=Video;%Duration%', seVideo.sPath]))/1000.0
         #nFramesPerSec = int(ceil(nFramesNorm / fVideoSec))
         fFramesPerSec = nFramesNorm / fVideoSec
 
         # call ffmpeg to extract frames from videos
         sFrames = os.path.join(sDir, "frame-%03d.jpg")
-        call(["ffmpeg", "-loglevel", "error" ,"-y", "-i", sVideoPath, \
-            "-r", str(fFramesPerSec), "-frames", str(nFramesNorm), sFrames])
-            
+        #print(sFrames)
+        call(["ffmpeg", "-loglevel", "error" ,"-y", "-i", seVideo.sPath, \
+                "-r", str(fFramesPerSec), "-frames", str(nFramesNorm), sFrames])
+
         # check right number of frames
         nFrames = len(glob.glob(sDir + "/*.jpg"))
-        dfFiles.loc[pos, "nFrames"] = nFrames
-        print("%5d | %s => %s | %.3fsec | %.1ffps | %df" % \
-            (nCounter, sVideoPath, sDir, fVideoSec, fFramesPerSec, nFrames))
+        print("%5d | %s | %.3fsec | %.1ffps | %df" % \
+            (nCounter, sDir, fVideoSec, fFramesPerSec, nFrames))
         assert(nFrames == nFramesNorm)
-        nCounter += 1
+        nCounter += 1 
 
-    # check number of created frames
-    nFramesTotal = len(glob.glob(os.path.join(sFrameDir, "*/*/*/*.jpg"))) - nFramesTotal
-    print("%d frames extracted from %d videos" % (nFramesTotal, len(dfFiles)))
 
     return
 
@@ -200,7 +191,7 @@ class Features():
 
         
 def train(sFeatureDir, sModelDir, sModelSaved, sLogDir, 
-          nFramesNorm = 20, nFeatureLength = 2048, nBatchSize=16, nEpoch=100, fLearn=1e-4):
+          nFramesNorm = 20, nFeatureLength = 2048, nBatchSize=16, nEpoch=100, fLearn=0.0001, fDropout=0.5):
 
     # Load features
     oFeatureTrain = Features(sFeatureDir + "/train", nFramesNorm, nFeatureLength)
@@ -215,14 +206,14 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
         keModel = Sequential()
         keModel.add(LSTM(1024, return_sequences=True,
                         input_shape=(nFramesNorm, nFeatureLength),
-                        dropout=0.5))
-        keModel.add(LSTM(1024, return_sequences=False, dropout=0.5))
+                        dropout=fDropout))
+        keModel.add(LSTM(1024, return_sequences=False, dropout=fDropout))
         #keModel.add(Dense(256, activation='relu'))
-        #keModel.add(Dropout(0.5))
+        #keModel.add(Dropout(fDropout))
         keModel.add(Dense(oFeatureTrain.nLabels, activation='softmax'))
 
         # Now compile the network.
-        optimizer = Adam(lr=fLearn)#, decay=1e-6)
+        optimizer = Adam(lr=fLearn)
         keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     else:
         # load model from file
@@ -244,10 +235,10 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
     csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '.acc'))
 
     # Helper: Save the model
-    os.makedirs(sModelDir, exist_ok=True)
-    checkpointer = ModelCheckpoint(
-        filepath = sModelDir + "/" + sLog + "-best.h5",
-        verbose = 1, save_best_only = True)
+    #os.makedirs(sModelDir, exist_ok=True)
+    #checkpointer = ModelCheckpoint(
+    #    filepath = sModelDir + "/" + sLog + "-best.h5",
+    #    verbose = 1, save_best_only = True)
  
     # Fit!
     keModel.fit(
@@ -259,7 +250,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
         shuffle=True,
         validation_data=(oFeatureVal.arFeatures, oFeatureVal.arLabelsOneHot),
         #callbacks=[tb, early_stopper, csv_logger, checkpointer],
-        callbacks=[csv_logger, checkpointer]
+        callbacks=[csv_logger]
     )    
     
     # save model
@@ -269,30 +260,28 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
 def main():
    
     # directories
-    sVideoDir = "datasets/04-chalearn"
-    sListFile = sVideoDir + "/train_list.txt"
-    sFrameDir = "03a-chalearn/data/frame"
-    sFeatureDir = "03a-chalearn/data/feature"
-    sModelDir = "03a-chalearn/model"
-    sLogDir = "03a-chalearn/log"
+    #sVideoDir = "datasets/01-ledasila"  
+    #sFrameDir = "02b-ledasila/data/frame"
+    sFeatureDir = "02b-ledasila/data/0440in21/feature"
+    sModelDir = "02b-ledasila/model"
+    sLogDir = "02b-ledasila/log"
 
-    nLabels = None
+    #nMinOccur = 18 # only take labels with min n occurrences in dataset
+    #nLabels = None
     nFramesNorm = 20 # number of frames per video for feature calculation
     nFeatureLength = 2048 # output features from CNN
 
-    print("\nStarting ChaLearn extraction & train in directory:", os.getcwd())
-
-    # extract frames from videos
-    #dfFiles = prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = nLabels)
-    #video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm)
+    print("\nStarting LedaSila extraction & train in directory:", os.getcwd())
     
+    # Convert videos to frames
+    #video2frames(sVideoDir, sFrameDir, sFeatureDir, nFramesNorm, nMinOccur, fVal = 0.2)
+
     # calculate features from frames
-    #frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels = nLabels)
+    #frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels)
 
     # train the LSTM network
-    #sModelSaved = sModelDir + "/20180523-2044-lstm-35878in249-best.h5"
     train(sFeatureDir, sModelDir, None, sLogDir, 
-          nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
+          nFramesNorm, nFeatureLength, nBatchSize=16, nEpoch=500, fLearn=1e-4, fDropout=0.5)
 
 if __name__ == '__main__':
     main()

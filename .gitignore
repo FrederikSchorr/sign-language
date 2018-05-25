@@ -1,13 +1,16 @@
 */__pycache__
 */.ipynb_checkpoints
+*.DS_store
 *jpg
 *png
 *avi
 *swp
 *mp4
 *corpus
+*acc
 *npy
 *hdf5
+*h5
 *log
 *tar
 *tgz

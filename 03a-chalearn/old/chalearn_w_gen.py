@@ -19,15 +19,14 @@ import glob
 from subprocess import call, check_output
 import time
 
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
-
 from inceptionfeatures import InceptionV3_features
 
-from keras.models import Sequential, load_model
+from keras import Sequential
 from keras.layers import LSTM, Dense, Dropout
 from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
+
+from featuregenerator import FeatureGenerator
 
 
 def prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = None):
@@ -155,115 +154,58 @@ def frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels=None):
     return
 
 
-class Features():
-    """ Read features from disc, check size and save in arrays """
+def train(sFeatureDir, sModelDir, sLogDir, nFramesNorm = 20, nFeatureLength = 2048,
+          saved_model=None, nBatchSize=16, nEpoch=100):
 
-    def __init__(self, sPath, nFramesNorm, nFeatureLength):
-        
-        # retrieve all feature files. Expected folder structure .../train/label/feature.npy
-        self.liPaths = glob.glob(os.path.join(sPath, "*", "*.npy"))
-        self.nSamples = len(self.liPaths)
-        if self.nSamples == 0:
-            print("Error: found no feature files in %s" % sPath)
-        print("Load %d samples from %s ..." % (self.nSamples, sPath))
-
-        self.arFeatures = np.zeros((self.nSamples, nFramesNorm, nFeatureLength))
-        
-        # loop through all feature files
-        liLabels = []
-        for i in range(self.nSamples):
-            
-            # Get the sequence from disc
-            sFile = self.liPaths[i]
-            arF = np.load(sFile)
-            if (arF.shape != (nFramesNorm, nFeatureLength)):
-                print("Error: %s has wrong shape %s" % (sFile, arF.shape))
-            self.arFeatures[i] = arF
-            
-            # Extract the label from path
-            sLabel = sFile.split("/")[-2]
-            liLabels.append(sLabel)
-            
-        # labels
-        self.liLabels = sorted(np.unique(liLabels))
-        self.nLabels = len(self.liLabels)
-        
-        # one hot encode labels
-        label_encoder = LabelEncoder()
-        arLabelsNumerical = label_encoder.fit_transform(liLabels).reshape(-1,1)
-        onehot_encoder = OneHotEncoder(sparse=False)
-        self.arLabelsOneHot = onehot_encoder.fit_transform(arLabelsNumerical)
-        
-        print("Loaded %d samples with %d labels" % (self.nSamples, self.nLabels))
-        
-        return
-
-        
-def train(sFeatureDir, sModelDir, sModelSaved, sLogDir, 
-          nFramesNorm = 20, nFeatureLength = 2048, nBatchSize=16, nEpoch=100, fLearn=1e-4):
-
-    # Load features
-    oFeatureTrain = Features(sFeatureDir + "/train", nFramesNorm, nFeatureLength)
-    oFeatureVal = Features(sFeatureDir + "/val", nFramesNorm, nFeatureLength)
-    assert(oFeatureTrain.liLabels == oFeatureVal.liLabels)
+    # Get generators.
+    oFeatureGenerator = FeatureGenerator(sFeatureDir, "train", "val")
+    train_generator = oFeatureGenerator.frame_generator("train", nBatchSize, nFramesNorm, nFeatureLength)
+    val_generator = oFeatureGenerator.frame_generator("val", nBatchSize, nFramesNorm, nFeatureLength)
 
     # Build a simple LSTM network. We pass the extracted features from
     # our CNN to this model     
-    
-    if sModelSaved == None:
-        # Build new model
-        keModel = Sequential()
-        keModel.add(LSTM(1024, return_sequences=True,
-                        input_shape=(nFramesNorm, nFeatureLength),
-                        dropout=0.5))
-        keModel.add(LSTM(1024, return_sequences=False, dropout=0.5))
-        #keModel.add(Dense(256, activation='relu'))
-        #keModel.add(Dropout(0.5))
-        keModel.add(Dense(oFeatureTrain.nLabels, activation='softmax'))
-
-        # Now compile the network.
-        optimizer = Adam(lr=fLearn)#, decay=1e-6)
-        keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    else:
-        # load model from file
-        print("Loading saved LSTM neural network %s ..." % sModelSaved)
-        keModel = load_model(sModelSaved)
-        assert(keModel.input_shape == (None, nFramesNorm, nFeatureLength))
-
+    keModel = Sequential()
+    keModel.add(LSTM(1024, return_sequences=False,
+                    input_shape=(nFramesNorm, nFeatureLength),
+                    dropout=0.5))
+    keModel.add(Dense(256, activation='relu'))
+    keModel.add(Dropout(0.5))
+    keModel.add(Dense(oFeatureGenerator.nClasses, activation='softmax'))
     keModel.summary()
+
+    # Now compile the network.
+    optimizer = Adam(lr=1e-6, decay=1e-7)
+    keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+
     # Helper: TensorBoard
     #tb = TensorBoard(log_dir=os.path.join("../data/90-logs", model))
 
     # Helper: Stop when we stop learning.
     #early_stopper = EarlyStopping(patience=5)
 
-    # Helper: Save results
-    os.makedirs(sLogDir, exist_ok=True)
+    # Helper: Save results.
     sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
-        str(oFeatureTrain.nSamples + oFeatureVal.nSamples) + "in" + str(oFeatureTrain.nLabels)
-    csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '.acc'))
+        str(oFeatureGenerator.nTrain + oFeatureGenerator.nTest) + "in" + str(oFeatureGenerator.nClasses)
+    csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '.log'))
 
-    # Helper: Save the model
-    os.makedirs(sModelDir, exist_ok=True)
-    checkpointer = ModelCheckpoint(
-        filepath = sModelDir + "/" + sLog + "-best.h5",
-        verbose = 1, save_best_only = True)
+    # Helper: Save the model.
+    #checkpointer = ModelCheckpoint(
+    #    filepath=os.path.join("../data/30-checkpoints", sLog + "-{epoch:03d}.hdf5"),
+    #    verbose=1, save_best_only=True)
  
     # Fit!
-    keModel.fit(
-        oFeatureTrain.arFeatures,
-        oFeatureTrain.arLabelsOneHot,
-        batch_size = nBatchSize,
-        epochs = nEpoch,
-        verbose = 1,
-        shuffle=True,
-        validation_data=(oFeatureVal.arFeatures, oFeatureVal.arLabelsOneHot),
+    keModel.fit_generator(
+        generator=train_generator,
+        steps_per_epoch=oFeatureGenerator.nTrain // nBatchSize,
+        epochs=nEpoch,
+        verbose=1,
         #callbacks=[tb, early_stopper, csv_logger, checkpointer],
-        callbacks=[csv_logger, checkpointer]
+        callbacks=[csv_logger],
+        validation_data=val_generator,
+        validation_steps=40,
+        workers=4
     )    
-    
-    # save model
-    keModel.save(sModelDir + "/" + sLog + "-last.h5")
+    keModel.save(sModelDir + "/" + sLog + ".h5")
 
 
 def main():
@@ -271,12 +213,12 @@ def main():
     # directories
     sVideoDir = "datasets/04-chalearn"
     sListFile = sVideoDir + "/train_list.txt"
-    sFrameDir = "03a-chalearn/data/frame"
-    sFeatureDir = "03a-chalearn/data/feature"
-    sModelDir = "03a-chalearn/model"
-    sLogDir = "03a-chalearn/log"
+    sFrameDir = "03a-chalearn/data/1-frame"
+    sFeatureDir = "03a-chalearn/data/2-feature"
+    sModelDir = "03a-chalearn/data/3-model"
+    sLogDir = "03a-chalearn/data/9-log"
 
-    nLabels = None
+    nLabels = 10
     nFramesNorm = 20 # number of frames per video for feature calculation
     nFeatureLength = 2048 # output features from CNN
 
@@ -290,9 +232,8 @@ def main():
     #frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels = nLabels)
 
     # train the LSTM network
-    #sModelSaved = sModelDir + "/20180523-2044-lstm-35878in249-best.h5"
-    train(sFeatureDir, sModelDir, None, sLogDir, 
-          nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
+    train(sFeatureDir, sModelDir, sLogDir, nFramesNorm, nFeatureLength = nFeatureLength,
+          saved_model=None, nBatchSize=8, nEpoch=500)
 
 if __name__ == '__main__':
     main()
