@@ -222,7 +222,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
         keModel.add(Dense(oFeatureTrain.nLabels, activation='softmax'))
 
         # Now compile the network.
-        optimizer = Adam(lr=fLearn)#, decay=1e-6)
+        optimizer = Adam(lr=fLearn)
         keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     else:
         # load model from file
