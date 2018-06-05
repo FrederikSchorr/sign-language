@@ -66,7 +66,7 @@ def main():
 	sModelFile = "03a-chalearn/model/20180525-1033-lstm-35878in249-best.h5"
 	sLabelsFile = "datasets/04-chalearn/labels.csv"
 	sVideoDir = "datasets/04-chalearn/train"
-	sFeatureDir = "03a-chalearn/data/feature/train"
+	sFeatureDir = "03a-chalearn/data/feature/val"
 
 	nFramesNorm = 20
 	nFeatureLength = 2048
