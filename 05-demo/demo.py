@@ -86,7 +86,7 @@ def classify_video(nnLSTM, arFeatures, nFramesNorm, nFeatureLength):
 	assert(arFeatures.shape == (nFramesNorm, nFeatureLength))
 
     # Only predict 1 sample
-	arFeatures.resize(1, nFramesNorm, nFeatureLength)
+	arFeatures.resize(1, nFramesNorm, nFeatureLength) 
 
     # infer on LSTM network
 	print("Predict video category through LSTM ...")

@@ -212,7 +212,7 @@ class Features():
         self.arFeatures = np.zeros((self.nSamples, nFramesNorm, nFeatureLength))
         
         # loop through all feature files
-        self.liLabels = []
+        self.liLabels = [] 
         for i in range(self.nSamples):
             
             # Get the sequence from disc

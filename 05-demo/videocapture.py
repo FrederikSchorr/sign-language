@@ -32,7 +32,7 @@ def rectangle_text(oFrame, sColor, sUpper, sLower = None, fBoxSize = 0.8):
 	return oFrame
 
 
-def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0):
+def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0): 
 	
 	if nCountdown > 0: 
 		fTimeTarget = time.time() + nCountdown

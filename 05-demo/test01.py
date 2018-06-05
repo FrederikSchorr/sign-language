@@ -76,7 +76,7 @@ def main():
 	
 	# load neural networks
 	nnCNN = load_inception()
-	nnLSTM = load_lstm(sModelFile, nFramesNorm, nFeatureLength)
+	nnLSTM = load_lstm(sModelFile, nFramesNorm, nFeatureLength) 
 
 	nCount = 0
 	nSuccess = 0
