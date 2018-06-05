@@ -15,6 +15,7 @@ from math import ceil
 
 import os
 import glob
+import shutil
 
 from subprocess import call, check_output
 import time
@@ -30,7 +31,48 @@ from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
 
 
+def copyvideos(sListFile, sVideoDir, sNewFolder, nLabels = None):
+    """ Copy videos from original ChaLearn folder structure defined in sListFile
+    to folders=labels
+    """
+    # stop if new folder already exists
+    assert os.path.exists(sVideoDir + "/" + sNewFolder) == False
+    
+    dfFiles = pd.read_csv(sListFile, 
+        sep=" ", header=None, 
+        names=["sVideoPath", "s2", "nLabel"])
+
+    # reduce sample for testing purpose
+    if nLabels != None: dfFiles = dfFiles.loc[dfFiles.nLabel <= nLabels, :].copy()
+
+    # create new folders=labels
+    seLabels = dfFiles.groupby("nLabel").size().sort_values(ascending=True)
+    print("%d videos, with %d labels, occuring between %d-%d times" % \
+        (len(dfFiles), len(seLabels), min(seLabels), max(seLabels)))
+    for nLabel, nOcc  in seLabels.items():
+        sDir = sVideoDir + "/" + sNewFolder + "/" + "{:03d}".format(nLabel)
+        print("Create directory", sDir)
+        os.makedirs(sDir)
+
+    # copy video files
+    nCount = 0
+    for pos, seVideo in dfFiles.iterrows():
+        sFileName = seVideo.sVideoPath.split("/")[2]
+        sPathNew = sNewFolder + "/" + "{:03d}".format(seVideo.nLabel) + "/" + sFileName
+
+        if nCount % 1000 == 0:
+            print ("{:5d} Copy {:s} to {:s}".format(nCount, seVideo.sVideoPath, sPathNew))
+        shutil.copy(sVideoDir + "/" + seVideo.sVideoPath, sVideoDir + "/" + sPathNew)  
+
+        seVideo.sVideoPath = sPathNew
+        nCount += 1
+
+    print("{:d} videos copied".format(nCount))
+    return dfFiles
+
+
 def prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = None):
+    """ Attention: this function assumes original ChaLearn folder structure """
     dfFiles = pd.read_csv(sListFile, 
         sep=" ", header=None, 
         names=["sVideoPath", "s2", "nLabel"])
@@ -170,7 +212,7 @@ class Features():
         self.arFeatures = np.zeros((self.nSamples, nFramesNorm, nFeatureLength))
         
         # loop through all feature files
-        liLabels = []
+        self.liLabels = []
         for i in range(self.nSamples):
             
             # Get the sequence from disc
@@ -182,19 +224,19 @@ class Features():
             
             # Extract the label from path
             sLabel = sFile.split("/")[-2]
-            liLabels.append(sLabel)
+            self.liLabels.append(sLabel)
             
         # labels
-        self.liLabels = sorted(np.unique(liLabels))
-        self.nLabels = len(self.liLabels)
+        self.liClasses = sorted(np.unique(self.liLabels))
+        self.nClasses = len(self.liClasses)
         
         # one hot encode labels
         label_encoder = LabelEncoder()
-        arLabelsNumerical = label_encoder.fit_transform(liLabels).reshape(-1,1)
+        arLabelsNumerical = label_encoder.fit_transform(self.liLabels).reshape(-1,1)
         onehot_encoder = OneHotEncoder(sparse=False)
         self.arLabelsOneHot = onehot_encoder.fit_transform(arLabelsNumerical)
         
-        print("Loaded %d samples with %d labels" % (self.nSamples, self.nLabels))
+        print("Loaded %d samples from %d classes" % (self.nSamples, self.nClasses))
         
         return
 
@@ -282,6 +324,9 @@ def main():
 
     print("\nStarting ChaLearn extraction & train in directory:", os.getcwd())
 
+    # copy videos from original ChaLearn folders to folders=label
+    #copyvideos(sListFile, sVideoDir, "train_l", None)
+
     # extract frames from videos
     #dfFiles = prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = nLabels)
     #video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm)
@@ -291,8 +336,8 @@ def main():
 
     # train the LSTM network
     #sModelSaved = sModelDir + "/20180523-2044-lstm-35878in249-best.h5"
-    train(sFeatureDir, sModelDir, None, sLogDir, 
-          nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
+    #train(sFeatureDir, sModelDir, None, sLogDir, 
+    #      nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
 
 if __name__ == '__main__':
     main()
