@@ -54,7 +54,7 @@ def video_to_frames(sVideoPath):
 			liFrames.append(arFrame)			
 		# finish
 		else: 
-			break
+			break 
 	
 	# When everything done, release the video object
 	oVideo.release()
