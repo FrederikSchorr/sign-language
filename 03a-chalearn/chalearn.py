@@ -326,8 +326,8 @@ def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):
         batch_size = None,
         verbose = 1)
     
+    print(keModel.metrics_names)
     print(liResult)
-    print(keModel.model.metrics_name)
 
     return
 
