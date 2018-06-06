@@ -64,7 +64,7 @@ def video_to_frames(sVideoPath):
 
 def main():
 	sModelFile = "03a-chalearn/model/20180525-1033-lstm-35878in249-best.h5"
-	sLabelsFile = "datasets/04-chalearn/labels.csv"
+	sClassFile = "datasets/04-chalearn/class.csv"
 	sVideoDir = "datasets/04-chalearn/train"
 	sFeatureDir = "03a-chalearn/data/feature/train"
 
@@ -73,8 +73,8 @@ def main():
 
 	print("\nStarting test from " + os.getcwd())
 
-	# load label description: nIndex,sLabel,sNameLong,sCat,sDetail
-	dfLabels = pd.read_csv(sLabelsFile, header = 0, index_col = 0, dtype = {"sLabel":str})
+	# load classes description: nIndex,sClass,sLong,sCat,sDetail
+	dfClass = pd.read_csv(sClassFile, header = 0, index_col = 0, dtype = {"sClass":str})
 
 	# read video files into list
 	#liVideos = list_videos(sVideoDir, nSamplesMax = 10)

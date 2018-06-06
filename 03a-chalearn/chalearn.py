@@ -309,6 +309,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
 
     return
 
+
 def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):    
     """ evaluate all features in given directory on saved model """
 
@@ -320,6 +321,7 @@ def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):
     keModel = load_model(sModelSaved)
     assert(keModel.input_shape == (None, nFramesNorm, nFeatureLength))
 
+    # evaluate 
     liResult = keModel.evaluate(
         oFeatures.arFeatures,
         oFeatures.arLabelsOneHot,
@@ -332,9 +334,41 @@ def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):
     return
 
 
+def predict(sFeatureDir, sModelSaved, sClassFile, nFramesNorm, nFeatureLength):    
+    """ predict class for all features in given directory on saved model """
+
+    # load classes description: nIndex,sClass,sLong,sCat,sDetail
+    dfClass = pd.read_csv(sClassFile, header = 0, index_col = 0, dtype = {"sClass":str})
+    
+    # Load features
+    oFeatures = Features(sFeatureDir, nFramesNorm, nFeatureLength)
+
+    # load model from file
+    print("Loading saved LSTM neural network %s ..." % sModelSaved)
+    keModel = load_model(sModelSaved)
+    assert(keModel.input_shape == (None, nFramesNorm, nFeatureLength))
+
+    # predict
+    arProba = keModel.predict(
+        oFeatures.arFeatures, 
+        batch_size = None, 
+        verbose = 1
+    )
+    arPred = arProba.argmax(axis=1)
+    
+    # compare
+    print("Groundtruth:", oFeatures.liLabels)
+    print("Predicted:  ", arPred)
+    #print("Predicted:  ", dfClass.sClass[arPred])
+    print("Accuracy:", np.mean(oFeatures.liLabels == dfClass.sClass[arPred]))
+
+    return
+
+
 def main():
    
     # directories
+    sClassFile = "datasets/04-chalearn/class.csv"
     sVideoDir = "datasets/04-chalearn"
     sListFile = sVideoDir + "/train_list.txt"
     sFrameDir = "03a-chalearn/data/frame"
@@ -364,7 +398,10 @@ def main():
     #      nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
 
     # evaluate features on LSTM
-    evaluate(sFeatureDir + "/train", sModelSaved, nFramesNorm, nFeatureLength)
+    #evaluate(sFeatureDir + "/train", sModelSaved, nFramesNorm, nFeatureLength)
+
+    # predict labels from features
+    predict(sFeatureDir + "/train", sModelSaved, sClassFile, nFramesNorm, nFeatureLength)
 
 if __name__ == '__main__':
     main()
