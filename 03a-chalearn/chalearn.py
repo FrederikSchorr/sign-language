@@ -368,10 +368,10 @@ def predict(sFeatureDir, sModelSaved, sClassFile, nFramesNorm, nFeatureLength):
     arPred = arProba.argmax(axis=1)
     
     # compare
-    print("Groundtruth:", oFeatures.liLabels)
-    print("Predicted:  ", arPred)
+    #print("Groundtruth:", oFeatures.liLabels)
+    #print("Predicted:  ", arPred)
     #print("Predicted:  ", dfClass.sClass[arPred])
-    print("Accuracy: {:.2f}".format(np.mean(oFeatures.liLabels == dfClass.sClass[arPred])))
+    print("Accuracy: {:.3f}".format(np.mean(oFeatures.liLabels == dfClass.sClass[arPred])))
 
     return
 
@@ -406,7 +406,7 @@ def main():
 
     # train the LSTM network
     sClassFile, sModelSaved = train(sFeatureDir, sModelDir, None, sLogDir, 
-          nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=3, fLearn=1e-3)
+          nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
 
     # evaluate features on LSTM
     evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
