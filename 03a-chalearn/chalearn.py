@@ -243,12 +243,23 @@ class Features():
         
 def train(sFeatureDir, sModelDir, sModelSaved, sLogDir, 
           nFramesNorm = 20, nFeatureLength = 2048, nBatchSize=16, nEpoch=100, fLearn=1e-4):
+    print("\nTrain LSTM ...")
 
     # Load features
     oFeatureTrain = Features(sFeatureDir + "/train", nFramesNorm, nFeatureLength)
     oFeatureVal = Features(sFeatureDir + "/val", nFramesNorm, nFeatureLength)
     assert(oFeatureTrain.liLabels == oFeatureVal.liLabels)
 
+    # prep logging
+    os.makedirs(sLogDir, exist_ok=True)
+    sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
+        str(oFeatureTrain.nSamples + oFeatureVal.nSamples) + "in" + str(oFeatureTrain.nClasses)
+
+    # save class names
+    dfClass = pd.DataFrame(oFeatureTrain.liClasses, columns=["sClass"])
+    sClassFile = sLogDir + "/" + sLog + "-class.csv"
+    dfClass.to_csv(sClassFile)
+    
     # Build a simple LSTM network. We pass the extracted features from
     # our CNN to this model     
     
@@ -261,7 +272,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
         keModel.add(LSTM(1024, return_sequences=False, dropout=0.5))
         #keModel.add(Dense(256, activation='relu'))
         #keModel.add(Dropout(0.5))
-        keModel.add(Dense(oFeatureTrain.nLabels, activation='softmax'))
+        keModel.add(Dense(oFeatureTrain.nClasses, activation='softmax'))
 
         # Now compile the network.
         optimizer = Adam(lr=fLearn)
@@ -280,9 +291,6 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
     #early_stopper = EarlyStopping(patience=5)
 
     # Helper: Save results
-    os.makedirs(sLogDir, exist_ok=True)
-    sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
-        str(oFeatureTrain.nSamples + oFeatureVal.nSamples) + "in" + str(oFeatureTrain.nLabels)
     csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '.acc'))
 
     # Helper: Save the model
@@ -305,13 +313,15 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
     )    
     
     # save model
-    keModel.save(sModelDir + "/" + sLog + "-last.h5")
+    sModelSaved = sModelDir + "/" + sLog + "-last.h5"
+    keModel.save(sModelSaved)
 
-    return
+    return sClassFile, sModelSaved
 
 
 def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):    
     """ evaluate all features in given directory on saved model """
+    print("\nEvaluate LSTM ...")
 
     # Load features
     oFeatures = Features(sFeatureDir, nFramesNorm, nFeatureLength)
@@ -336,7 +346,8 @@ def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):
 
 def predict(sFeatureDir, sModelSaved, sClassFile, nFramesNorm, nFeatureLength):    
     """ predict class for all features in given directory on saved model """
-
+    
+    print("\nPredict features on LSTM ...")
     # load classes description: nIndex,sClass,sLong,sCat,sDetail
     dfClass = pd.read_csv(sClassFile, header = 0, index_col = 0, dtype = {"sClass":str})
     
@@ -360,7 +371,7 @@ def predict(sFeatureDir, sModelSaved, sClassFile, nFramesNorm, nFeatureLength):
     print("Groundtruth:", oFeatures.liLabels)
     print("Predicted:  ", arPred)
     #print("Predicted:  ", dfClass.sClass[arPred])
-    print("Accuracy:", np.mean(oFeatures.liLabels == dfClass.sClass[arPred]))
+    print("Accuracy: {:.2f}".format(np.mean(oFeatures.liLabels == dfClass.sClass[arPred])))
 
     return
 
@@ -374,6 +385,7 @@ def main():
     sFrameDir = "03a-chalearn/data/frame"
     sFeatureDir = "03a-chalearn/data/feature"
     sModelDir = "03a-chalearn/model"
+    #sModelSaved = sModelDir + "/20180525-1033-lstm-35878in249-best.h5"
     sLogDir = "03a-chalearn/log"
 
     nLabels = None
@@ -393,15 +405,14 @@ def main():
     #frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels = nLabels)
 
     # train the LSTM network
-    sModelSaved = sModelDir + "/20180525-1033-lstm-35878in249-best.h5"
-    #train(sFeatureDir, sModelDir, None, sLogDir, 
-    #      nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
+    sClassFile, sModelSaved = train(sFeatureDir, sModelDir, None, sLogDir, 
+          nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=3, fLearn=1e-3)
 
     # evaluate features on LSTM
-    #evaluate(sFeatureDir + "/train", sModelSaved, nFramesNorm, nFeatureLength)
+    evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
 
     # predict labels from features
-    predict(sFeatureDir + "/train", sModelSaved, sClassFile, nFramesNorm, nFeatureLength)
+    predict(sFeatureDir + "/val", sModelSaved, sClassFile, nFramesNorm, nFeatureLength)
 
 if __name__ == '__main__':
     main()
