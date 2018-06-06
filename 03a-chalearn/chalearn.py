@@ -248,7 +248,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
     # Load features
     oFeatureTrain = Features(sFeatureDir + "/train", nFramesNorm, nFeatureLength)
     oFeatureVal = Features(sFeatureDir + "/val", nFramesNorm, nFeatureLength)
-    assert(oFeatureTrain.liLabels == oFeatureVal.liLabels)
+    assert(oFeatureTrain.liClasses == oFeatureVal.liClasses)
 
     # prep logging
     os.makedirs(sLogDir, exist_ok=True)
