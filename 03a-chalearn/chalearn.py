@@ -364,7 +364,7 @@ def main():
     #      nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
 
     # evaluate features on LSTM
-    evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
+    evaluate(sFeatureDir + "/train", sModelSaved, nFramesNorm, nFeatureLength)
 
 if __name__ == '__main__':
     main()
