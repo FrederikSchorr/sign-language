@@ -307,6 +307,30 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
     # save model
     keModel.save(sModelDir + "/" + sLog + "-last.h5")
 
+    return
+
+def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):    
+    """ evaluate all features in given directory on saved model """
+
+    # Load features
+    oFeatures = Features(sFeatureDir, nFramesNorm, nFeatureLength)
+
+    # load model from file
+    print("Loading saved LSTM neural network %s ..." % sModelSaved)
+    keModel = load_model(sModelSaved)
+    assert(keModel.input_shape == (None, nFramesNorm, nFeatureLength))
+
+    liResult = keModel.evaluate(
+        oFeatures.arFeatures,
+        oFeatures.arLabelsOneHot,
+        batch_size = None,
+        verbose = 1)
+    
+    print(liResult)
+    print(keModel.model.metrics_name)
+
+    return
+
 
 def main():
    
@@ -335,9 +359,12 @@ def main():
     #frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels = nLabels)
 
     # train the LSTM network
-    #sModelSaved = sModelDir + "/20180523-2044-lstm-35878in249-best.h5"
+    sModelSaved = sModelDir + "/20180525-1033-lstm-35878in249-best.h5"
     #train(sFeatureDir, sModelDir, None, sLogDir, 
     #      nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
+
+    # evaluate features on LSTM
+    evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
 
 if __name__ == '__main__':
     main()
