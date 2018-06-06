@@ -95,29 +95,29 @@ def classify_video(nnLSTM, arFeatures, nFramesNorm, nFeatureLength):
 	arBestLabel = arPredictProba.argsort()[-5:][::-1]
 	arBestProba = arPredictProba[arBestLabel]
 
-	print("Most probable 5 categories:" + str(arBestLabel))
-	print("with probabilites         :" + str(arBestProba))
+	print("Most probable 5 classes:" + str(arBestLabel))
+	print("with probabilites      :" + str(arBestProba))
 	
 	return arBestLabel, arBestProba
 
 
 def main():
-	sModelFile = "03a-chalearn/model/20180525-1033-lstm-35878in249-best.h5"
-	sLabelsFile = "datasets/04-chalearn/labels.csv"
+	sModelFile = "03a-chalearn/model/20180606-0802-lstm-35878in249-best.h5"
+	sClassFile = "datasets/04-chalearn/class.csv"
 	nFramesNorm = 20
 	nFeatureLength = 2048
 
 	print("\nStarting Gesture recognition live demo from " + os.getcwd())
 	
+	# load label description
+	dfClass = pd.read_csv(sClassFile)
+
 	# load neural networks
 	nnCNN = load_inception()
 	nnLSTM = load_lstm(sModelFile, nFramesNorm, nFeatureLength)
 
-	# load label description
-	dfLabels = pd.read_csv(sLabelsFile)
-
 	# open a pointer to the webcam video stream
-	oStream = cv2.VideoCapture(0)
+	oStream = cv2.VideoCapture(1)
 
 	# loop over action states
 	print("Launch video capture screen ...")
@@ -136,6 +136,10 @@ def main():
 			print("\nCaptured video: {:.1f} sec, {} frames, {:.1f} fps". \
 				format(fElapsed, len(liFrames), len(liFrames)/fElapsed))
 
+			if len(liFrames) < nFramesNorm: 
+				sResults = "No sign detected"
+				continue
+
 			# show orange wait box
 			frame_show(oStream, "orange", "Translating sign ...")
 
@@ -143,8 +147,10 @@ def main():
 			arFeatures = frames_to_features(nnCNN, liFrames, nFramesNorm)
 			arLabel, arProba = classify_video(nnLSTM, arFeatures, nFramesNorm, nFeatureLength)
 
+			nPred = arLabel[0]
 			sResults = "Identified sign: [{}] {} (confidence {:.0f}%)". \
-				format(arLabel[0], dfLabels.sDetail[arLabel[0]], arProba[0]*100)
+				format(dfClass.sClass[nPred], dfClass.sDetail[nPred], arProba[0]*100)
+			print(sResults)
 
 			# ready for next video	
 

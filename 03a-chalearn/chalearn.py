@@ -291,7 +291,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
     #early_stopper = EarlyStopping(patience=5)
 
     # Helper: Save results
-    csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '.acc'))
+    csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '-acc.csv'))
 
     # Helper: Save the model
     os.makedirs(sModelDir, exist_ok=True)

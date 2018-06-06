@@ -59,8 +59,8 @@ def video_to_frames(sVideoPath):
 
 
 def main():
-	sModelFile = "03a-chalearn/model/20180525-1033-lstm-35878in249-best.h5"
-	sLabelsFile = "datasets/04-chalearn/labels.csv"
+	sModelFile = "03a-chalearn/model/20180606-0802-lstm-35878in249-best.h5"
+	sClassFile = "datasets/04-chalearn/class.csv"
 	sVideoDir = "datasets/04-chalearn/train"
 
 	nFramesNorm = 20
@@ -69,7 +69,7 @@ def main():
 	print("\nStarting test from " + os.getcwd())
 
 	# load label description: nIndex,sLabel,sNameLong,sCat,sDetail
-	dfLabels = pd.read_csv(sLabelsFile, header = 0, index_col = 0, dtype = {"sLabel":str})
+	dfClass = pd.read_csv(sClassFile, header = 0, index_col = 0, dtype = {"sClass":str})
 
 	# read video files into list
 	liVideos = list_videos(sVideoDir, nSamplesMax = 10)
@@ -95,12 +95,12 @@ def main():
 
 		# compare groundtruth with predicted label
 		sLabelTrue = sVideoPath.split("/")[-2]
-		sLabelTrueDetail = dfLabels.set_index("sLabel").loc[sLabelTrue, "sDetail"]
+		sLabelTrueDetail = dfClass.set_index("sClass").loc[sLabelTrue, "sDetail"]
 		print("Groundtruth label: [{}] {}".format(sLabelTrue, sLabelTrueDetail))
 		
-		sLabelPred = dfLabels.sLabel[arLabel[0]]
+		sLabelPred = dfClass.sClass[arLabel[0]]
 		print("Identified sign:   [{}] {} (confidence {:.0f}%)". \
-			format(sLabelPred, dfLabels.sDetail[arLabel[0]], arProba[0]*100))
+			format(sLabelPred, dfClass.sDetail[arLabel[0]], arProba[0]*100))
 		
 		if sLabelTrue == sLabelPred:
 			nSuccess += 1
