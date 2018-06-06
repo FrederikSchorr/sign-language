@@ -117,7 +117,7 @@ def main():
 	nnLSTM = load_lstm(sModelFile, nFramesNorm, nFeatureLength)
 
 	# open a pointer to the webcam video stream
-	oStream = cv2.VideoCapture(1)
+	oStream = cv2.VideoCapture(0)
 
 	# loop over action states
 	print("Launch video capture screen ...")
@@ -137,7 +137,7 @@ def main():
 				format(fElapsed, len(liFrames), len(liFrames)/fElapsed))
 
 			if len(liFrames) < nFramesNorm: 
-				sResults = "No sign detected"
+				sResults = "No sufficiently long sign detected"
 				continue
 
 			# show orange wait box
