@@ -23,12 +23,15 @@ import time
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 
-from inceptionfeatures import InceptionV3_features
+#from inceptionfeatures import InceptionV3_features
 
 from keras.models import Sequential, load_model
 from keras.layers import LSTM, Dense, Dropout
 from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
+
+from keras.applications import mobilenet
+from keras.preprocessing import image
 
 
 def copyvideos(sListFile, sVideoDir, sNewFolder, nLabels = None):
@@ -147,7 +150,7 @@ def video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm = 20):
     return
 
 
-def frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels=None):
+def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nLabels=None):
     """ Use pretrained CNN to calculate features from video-frames """
 
     sCurrentDir = os.getcwd()
@@ -166,14 +169,24 @@ def frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels=None):
         dfVideos = dfVideos[dfVideos["sLabel"].isin(liLabels)]
         print("Extracting features from %d directories (%d Labels)" % (len(dfVideos), nLabels))
 
-    # get the InceptionV3 model
-    cnn = InceptionV3_features()
+    # load ConvNet
+    if sConvNet == "inception":
+        # get the InceptionV3 model
+        assert(False) # need to update code to work with inception model
+        #keConvNet = InceptionV3_features()
+    else:
+        # default = MobileNet
+        keConvNet = mobilenet.MobileNet(weights="imagenet")
+            #input_shape = (224, 224, 3),
+            #include_top = False,
+        #)
 
-    # feed all frames into cnn, save results in file per video
+    # loop over all videos-directories. 
+    # Feed all frames into ConvNet, save results in file per video
     nCounter = 0
     for _, seVideo in dfVideos.iterrows():
 
-        # save resulting list of features in file in "data/2-feature/train/label/video.npy"
+        # save resulting list of features in file in eg "data/feature/train/label/video.npy"
         sFeaturePath = os.path.join(sFeatureDir, seVideo.sFrameDir + ".npy")
         if (os.path.exists(sFeaturePath)):
             # if feature already etracted, skip
@@ -186,13 +199,26 @@ def frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels=None):
         print("%5d | Extracting features from %d frames to %s" % (nCounter, len(sFrames), sFeaturePath))
         assert(len(sFrames) == nFramesNorm)
 
-        # run cnn on each frame, collect the resulting features
-        liFeatures = []
+        # assemble array with all images
+        liFrames = []
         for sFrame in sFrames:
-            features = cnn.extract(sFrame)
-            liFeatures.append(features)   
+            
+            # load frame
+            img = image.load_img(sFrame, target_size=(224, 224))
+            ar = image.img_to_array(img)
+            liFrames.append(ar)  
         
-        np.save(sFeaturePath, liFeatures)
+        # predict features with ConvNet
+        arFrames = np.array(liFrames)
+        print(arFrames.shape)
+
+        arFrames = mobilenet.preprocess_input(arFrames)
+        arFeatures = keConvNet.predict(arFrames)
+
+        print(arFeatures.shape)
+
+        # save to file
+        np.save(sFeaturePath, arFeatures)
         nCounter += 1
     return
 
@@ -398,21 +424,21 @@ def main():
     #copyvideos(sListFile, sVideoDir, "train_l", None)
 
     # extract frames from videos
-    #dfFiles = prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = nLabels)
+    #dfFiles = prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels)
     #video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm)
     
     # calculate features from frames
-    #frames2features(sFrameDir, sFeatureDir, nFramesNorm, nLabels = nLabels)
+    frames2features("mobilenet", sFrameDir, sFeatureDir, nFramesNorm, nLabels)
 
     # train the LSTM network
-    sClassFile, sModelSaved = train(sFeatureDir, sModelDir, None, sLogDir, 
-          nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
+    #sClassFile, sModelSaved = train(sFeatureDir, sModelDir, None, sLogDir, 
+    #      nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
 
     # evaluate features on LSTM
-    evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
+    #evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
 
     # predict labels from features
-    predict(sFeatureDir + "/val", sModelSaved, sClassFile, nFramesNorm, nFeatureLength)
+    #predict(sFeatureDir + "/val", sModelSaved, sClassFile, nFramesNorm, nFeatureLength)
 
 if __name__ == '__main__':
     main()
