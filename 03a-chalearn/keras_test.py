@@ -3,13 +3,22 @@ from keras.applications.mobilenet import preprocess_input
 from keras.preprocessing import image
 import numpy as np
 
-model = MobileNet(weights='imagenet')
+model = MobileNet(input_shape=(224,224,3), weights='imagenet', include_top=False)
+model.summary()
 
-img_path = "data/frame/train/c001/M_00071/frame-001.jpg"
-img = image.load_img(img_path, target_size=(224, 224))
-x = image.img_to_array(img)
-x = np.expand_dims(x, axis=0)
-x = preprocess_input(x)
+img_path = "03a-chalearn/data/frame/train/c001/M_00071/frame-001.jpg"
+pilFrame = image.load_img(img_path, target_size=(224, 224))
+arFrame = image.img_to_array(pilFrame)
 
-features = model.predict(x)
-print(features.shape)
+liX = []
+liX.append(arFrame)
+liX.append(arFrame)
+liX.append(arFrame)
+
+arX = np.array(liX)
+print(arX.shape)
+arX = preprocess_input(arX)
+print(arX.shape)
+
+arFeatures = model.predict(arX)
+print(arFeatures.shape)

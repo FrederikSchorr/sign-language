@@ -34,95 +34,35 @@ from keras.applications import mobilenet
 from keras.preprocessing import image
 
 
-def copyvideos(sListFile, sVideoDir, sNewFolder, nLabels = None):
-    """ Copy videos from original ChaLearn folder structure defined in sListFile
-    to folders=labels
-    """
-    # stop if new folder already exists
-    assert os.path.exists(sVideoDir + "/" + sNewFolder) == False
-    
-    dfFiles = pd.read_csv(sListFile, 
-        sep=" ", header=None, 
-        names=["sVideoPath", "s2", "nLabel"])
-
-    # reduce sample for testing purpose
-    if nLabels != None: dfFiles = dfFiles.loc[dfFiles.nLabel <= nLabels, :].copy()
-
-    # create new folders=labels
-    seLabels = dfFiles.groupby("nLabel").size().sort_values(ascending=True)
-    print("%d videos, with %d labels, occuring between %d-%d times" % \
-        (len(dfFiles), len(seLabels), min(seLabels), max(seLabels)))
-    for nLabel, nOcc  in seLabels.items():
-        sDir = sVideoDir + "/" + sNewFolder + "/" + "{:03d}".format(nLabel)
-        print("Create directory", sDir)
-        os.makedirs(sDir)
-
-    # copy video files
-    nCount = 0
-    for pos, seVideo in dfFiles.iterrows():
-        sFileName = seVideo.sVideoPath.split("/")[2]
-        sPathNew = sNewFolder + "/" + "{:03d}".format(seVideo.nLabel) + "/" + sFileName
-
-        if nCount % 1000 == 0:
-            print ("{:5d} Copy {:s} to {:s}".format(nCount, seVideo.sVideoPath, sPathNew))
-        shutil.copy(sVideoDir + "/" + seVideo.sVideoPath, sVideoDir + "/" + sPathNew)  
-
-        seVideo.sVideoPath = sPathNew
-        nCount += 1
-
-    print("{:d} videos copied".format(nCount))
-    return dfFiles
-
-
-def prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels = None):
-    """ Attention: this function assumes original ChaLearn folder structure """
-    dfFiles = pd.read_csv(sListFile, 
-        sep=" ", header=None, 
-        names=["sVideoPath", "s2", "nLabel"])
-
-    # reduce sample for testing purpose
-    if nLabels != None: dfFiles = dfFiles.loc[dfFiles.nLabel <= nLabels, :].copy()
-
-    seLabels = dfFiles.groupby("nLabel").size().sort_values(ascending=False)
-    print("%d videos, with %d labels, occuring between %d-%d times" % \
-        (len(dfFiles), len(seLabels), min(seLabels), max(seLabels)))
-
-    # split train vs val data
-    dfFiles.loc[:,"sTrain_val"] = "train"
-    for g in dfFiles.groupby("nLabel"):
-        pos = g[1].sample(frac = fVal).index
-        dfFiles.loc[pos, "sTrain_val"] = "val"
-    print(dfFiles.groupby("sTrain_val").size())
-
-    # target directories
-    seDir3 = dfFiles.sVideoPath.apply(lambda s: s.split("/")[2])
-    seDir3 = seDir3.apply(lambda s: s.split(".")[0])
-    dfFiles.loc[:, "sFrameDir"] = dfFiles.sTrain_val + "/" + dfFiles.nLabel.astype("str") + "/" + seDir3
-
-    sFilesListPath = sLogDir + "/" + time.strftime("%Y%m%d-%H%M") + "-list.csv"
-    print("Save list to %s" % sFilesListPath)
-    dfFiles.to_csv(sFilesListPath)
-    return dfFiles
-
-
-def video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm = 20):
+def video2frames(sVideoDir, sFrameDir, nFramesNorm = 20, nClasses = None):
     """ Extract frames from videos """
     
-    # prepare frame counting
-    dfFiles.loc[:, "nFrames"] = 0
-    nFramesTotal = len(glob.glob(os.path.join(sFrameDir, "*/*/*/*.jpg")))
-    assert(nFramesTotal == 0) # risk that video is extracted into train PLUS val directory
-    nCounter = 0
+    # do not (partially) overwrite existing frame directory
+    if os.path.exists(sFrameDir): raise ValueError("Folder {} alredy exists".format(sFrameDir)) 
 
-    # extract frames from each video
-    print("Extract frames from %d videos (%d frames) ..." % (len(dfFiles), nFramesNorm))
-    for pos, seVideo in dfFiles.iterrows():
+    # get videos. Assume sVideoDir / train / class / video.avi
+    dfVideos = pd.DataFrame(glob.glob(sVideoDir + "/*/*/*.avi"), columns=["sVideoPath"])
+    print("Located {} videos in {}, extracting {} frames each to {} ..."\
+        .format(len(dfVideos), sVideoDir, nFramesNorm, sFrameDir))
+
+    # eventually restrict to first nLabels
+    if nClasses != None:
+        dfVideos.loc[:,"sLabel"] = dfVideos.sVideoPath.apply(lambda s: s.split("/")[-2])
+        liClasses = sorted(dfVideos.sLabel.unique())[:nClasses]
+        dfVideos = dfVideos[dfVideos["sLabel"].isin(liClasses)]
+        print("Using only {} videos from {} classes".format(len(dfVideos), nClasses))
+
+    nCounter = 0
+    # loop through all videos and extract frames
+    for sVideoPath in dfVideos.sVideoPath:
         
-        # source path
-        sVideoPath = os.path.join(sVideoDir, seVideo.sVideoPath)
+        # source path: ... / sVideoDir / train / class / video.avi
+        li_sVideoPath = sVideoPath.split("/")
+        if len(li_sVideoPath) < 4: raise ValueError("Video path should have min 4 components: {}".format(str(li_sVideoPath)))
+        sVideoName = li_sVideoPath[-1].split(".")[0]
 
         # create frame directory for each video
-        sDir = os.path.join(sFrameDir, seVideo.sFrameDir)
+        sDir = sFrameDir + "/" + li_sVideoPath[-3] + "/" + li_sVideoPath[-2] + "/" + sVideoName
         os.makedirs(sDir, exist_ok=True)
         
         # determine length of video in sec and deduce frame rate
@@ -131,43 +71,43 @@ def video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm = 20):
         fFramesPerSec = nFramesNorm / fVideoSec
 
         # call ffmpeg to extract frames from videos
-        sFrames = os.path.join(sDir, "frame-%03d.jpg")
+        sFrames = sDir + "/frame-%03d.jpg"
         call(["ffmpeg", "-loglevel", "error" ,"-y", "-i", sVideoPath, \
             "-r", str(fFramesPerSec), "-frames", str(nFramesNorm), sFrames])
             
         # check right number of frames
         nFrames = len(glob.glob(sDir + "/*.jpg"))
-        dfFiles.loc[pos, "nFrames"] = nFrames
-        print("%5d | %s => %s | %.3fsec | %.1ffps | %df" % \
-            (nCounter, sVideoPath, sDir, fVideoSec, fFramesPerSec, nFrames))
-        assert(nFrames == nFramesNorm)
+        print("%5d | %s | %2.3fsec | %.1ffps | %df" % \
+            (nCounter, sDir, fVideoSec, fFramesPerSec, nFrames))
+        if nFrames != nFramesNorm: raise ValueError("Incorrect number of frames extracted")
         nCounter += 1
 
     # check number of created frames
-    nFramesTotal = len(glob.glob(os.path.join(sFrameDir, "*/*/*/*.jpg"))) - nFramesTotal
-    print("%d frames extracted from %d videos" % (nFramesTotal, len(dfFiles)))
+    nFramesTotal = len(glob.glob(sFrameDir + "/*/*/*/*.jpg"))
+    print("%d frames extracted from %d videos" % (nFramesTotal, len(dfVideos)))
 
     return
 
 
-def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nLabels=None):
+def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses=None):
     """ Use pretrained CNN to calculate features from video-frames """
 
+    # do not (partially) overwrite existing feature directory
+    if os.path.exists(sFeatureDir): raise ValueError("Folder {} alredy exists".format(sFeatureDir)) 
+
     sCurrentDir = os.getcwd()
-    # get list of directories with frames
+    # get list of directories with frames: ... / sFrameDir/train/class/videodir/frames.jpg
     os.chdir(sFrameDir)
-    dfVideos = pd.DataFrame(glob.glob("train/*/*"), dtype=str, columns=["sFrameDir"])
-    dfVideos = pd.concat([dfVideos,
-               pd.DataFrame(glob.glob("val/*/*"), dtype=str, columns=["sFrameDir"])])
+    dfVideos = pd.DataFrame(glob.glob("*/*/*"), dtype=str, columns=["sFrameDir"])
     os.chdir(sCurrentDir)
-    print("Found %d directories with frames" % len(dfVideos))
+    print("Found %d directories=videos with frames" % len(dfVideos))
 
     # eventually restrict to first nLabels
-    if nLabels != None:
+    if nClasses != None:
         dfVideos.loc[:,"sLabel"] = dfVideos.sFrameDir.apply(lambda s: s.split("/")[-2])
-        liLabels = sorted(dfVideos.sLabel.unique())[:nLabels]
-        dfVideos = dfVideos[dfVideos["sLabel"].isin(liLabels)]
-        print("Extracting features from %d directories (%d Labels)" % (len(dfVideos), nLabels))
+        liClasses = sorted(dfVideos.sLabel.unique())[:nClasses]
+        dfVideos = dfVideos[dfVideos["sLabel"].isin(liClasses)]
+        print("Using only %d directories from %d classes" % (len(dfVideos), nClasses))
 
     # load ConvNet
     if sConvNet == "inception":
@@ -176,10 +116,11 @@ def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nLabels=None)
         #keConvNet = InceptionV3_features()
     else:
         # default = MobileNet
-        keConvNet = mobilenet.MobileNet(weights="imagenet")
-            #input_shape = (224, 224, 3),
-            #include_top = False,
-        #)
+        keConvNet = mobilenet.MobileNet(
+            weights="imagenet",
+            input_shape = (224, 224, 3),
+            include_top = False
+        )
 
     # loop over all videos-directories. 
     # Feed all frames into ConvNet, save results in file per video
@@ -204,18 +145,18 @@ def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nLabels=None)
         for sFrame in sFrames:
             
             # load frame
-            img = image.load_img(sFrame, target_size=(224, 224))
-            ar = image.img_to_array(img)
-            liFrames.append(ar)  
+            pilFrame = image.load_img(sFrame, target_size=(224, 224))
+            arFrame = image.img_to_array(pilFrame)
+            liFrames.append(arFrame)  
+        
+        # preprocessing - specific to ConvNet
+        arFrames = mobilenet.preprocess_input(np.array(liFrames))
         
         # predict features with ConvNet
-        arFrames = np.array(liFrames)
-        print(arFrames.shape)
-
-        arFrames = mobilenet.preprocess_input(arFrames)
         arFeatures = keConvNet.predict(arFrames)
-
-        print(arFeatures.shape)
+       
+        # flatten the features
+        arFeatures = arFeatures.reshape(nFramesNorm, -1)
 
         # save to file
         np.save(sFeaturePath, arFeatures)
@@ -226,7 +167,7 @@ def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nLabels=None)
 class Features():
     """ Read features from disc, check size and save in arrays """
 
-    def __init__(self, sPath, nFramesNorm, nFeatureLength):
+    def __init__(self, sPath, tuShape, liClasses = None):
         
         # retrieve all feature files. Expected folder structure .../train/label/feature.npy
         self.liPaths = glob.glob(os.path.join(sPath, "*", "*.npy"))
@@ -235,7 +176,7 @@ class Features():
             print("Error: found no feature files in %s" % sPath)
         print("Load %d samples from %s ..." % (self.nSamples, sPath))
 
-        self.arFeatures = np.zeros((self.nSamples, nFramesNorm, nFeatureLength))
+        self.arFeatures = np.zeros((self.nSamples,) + tuShape)
         
         # loop through all feature files
         self.liLabels = [] 
@@ -244,37 +185,55 @@ class Features():
             # Get the sequence from disc
             sFile = self.liPaths[i]
             arF = np.load(sFile)
-            if (arF.shape != (nFramesNorm, nFeatureLength)):
-                print("Error: %s has wrong shape %s" % (sFile, arF.shape))
+            if (arF.shape != tuShape):
+                print("ERROR: %s has wrong shape %s" % (sFile, arF.shape))
             self.arFeatures[i] = arF
             
             # Extract the label from path
             sLabel = sFile.split("/")[-2]
             self.liLabels.append(sLabel)
             
-        # labels
+        # extract classes from samples
         self.liClasses = sorted(np.unique(self.liLabels))
+        # check if classes are already provided
+        if liClasses != None:
+            liClasses = sorted(np.unique(liClasses))
+            # check detected vs provided classes
+            if set(self.liClasses).issubset(set(liClasses)) == False:
+                # detected classes are NOT subset of provided classes
+                print("ERROR: unexpected additional classes detected")
+                print("Provided classes:", liClasses)
+                print("Detected classes:", self.liClasses)
+                assert False
+            # use superset of provided classes
+            self.liClasses = liClasses
+            
         self.nClasses = len(self.liClasses)
         
-        # one hot encode labels
+        # one hot encode labels, using above classes
         label_encoder = LabelEncoder()
-        arLabelsNumerical = label_encoder.fit_transform(self.liLabels).reshape(-1,1)
+        label_encoder.fit(self.liClasses)
+        ar_n_Labels = label_encoder.transform(self.liLabels).reshape(-1,1)
         onehot_encoder = OneHotEncoder(sparse=False)
-        self.arLabelsOneHot = onehot_encoder.fit_transform(arLabelsNumerical)
+        self.arLabelsOneHot = onehot_encoder.fit_transform(ar_n_Labels)
         
         print("Loaded %d samples from %d classes" % (self.nSamples, self.nClasses))
         
         return
 
         
-def train(sFeatureDir, sModelDir, sModelSaved, sLogDir, 
-          nFramesNorm = 20, nFeatureLength = 2048, nBatchSize=16, nEpoch=100, fLearn=1e-4):
+def train(sConvNet, sFeatureDir, sModelSaved, sModelDir, sLogDir, 
+          nFramesNorm = 20, nBatchSize=16, nEpoch=100, fLearn=1e-4):
     print("\nTrain LSTM ...")
 
+    # output shape of ConvNet
+    if sConvNet == "mobilenet":
+        tuFeatureShape = (nFramesNorm, 50176)
+    else: assert False
+
     # Load features
-    oFeatureTrain = Features(sFeatureDir + "/train", nFramesNorm, nFeatureLength)
-    oFeatureVal = Features(sFeatureDir + "/val", nFramesNorm, nFeatureLength)
-    assert(oFeatureTrain.liClasses == oFeatureVal.liClasses)
+    oFeatureTrain = Features(sFeatureDir + "/train", tuFeatureShape)
+    oFeatureVal = Features(sFeatureDir + "/val", tuFeatureShape, liClasses = oFeatureTrain.liClasses)
 
     # prep logging
     os.makedirs(sLogDir, exist_ok=True)
@@ -293,7 +252,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
         # Build new model
         keModel = Sequential()
         keModel.add(LSTM(1024, return_sequences=True,
-                        input_shape=(nFramesNorm, nFeatureLength),
+                        input_shape=(20, 1024),
                         dropout=0.5))
         keModel.add(LSTM(1024, return_sequences=False, dropout=0.5))
         #keModel.add(Dense(256, activation='relu'))
@@ -307,7 +266,7 @@ def train(sFeatureDir, sModelDir, sModelSaved, sLogDir,
         # load model from file
         print("Loading saved LSTM neural network %s ..." % sModelSaved)
         keModel = load_model(sModelSaved)
-        assert(keModel.input_shape == (None, nFramesNorm, nFeatureLength))
+        assert keModel.input_shape == ((None, ) + tuFeatureShape)
 
     keModel.summary()
     # Helper: TensorBoard
@@ -407,32 +366,27 @@ def main():
     # directories
     sClassFile = "datasets/04-chalearn/class.csv"
     sVideoDir = "datasets/04-chalearn"
-    sListFile = sVideoDir + "/train_list.txt"
-    sFrameDir = "03a-chalearn/data/frame"
-    sFeatureDir = "03a-chalearn/data/feature"
+    sFrameDir = "03a-chalearn/data/frame-20"
+    sFeatureDir = "03a-chalearn/data/feature-mobilenet"
     sModelDir = "03a-chalearn/model"
     #sModelSaved = sModelDir + "/20180525-1033-lstm-35878in249-best.h5"
     sLogDir = "03a-chalearn/log"
 
-    nLabels = None
+    nClasses = 3
     nFramesNorm = 20 # number of frames per video for feature calculation
-    nFeatureLength = 2048 # output features from CNN
+    sConvNet = "mobilenet"
 
     print("\nStarting ChaLearn extraction & train in directory:", os.getcwd())
 
-    # copy videos from original ChaLearn folders to folders=label
-    #copyvideos(sListFile, sVideoDir, "train_l", None)
-
     # extract frames from videos
-    #dfFiles = prepFileList(sListFile, sLogDir, fVal = 0.2, nLabels)
-    #video2frames(dfFiles, sVideoDir, sFrameDir, nFramesNorm)
+    #video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses)
     
     # calculate features from frames
-    frames2features("mobilenet", sFrameDir, sFeatureDir, nFramesNorm, nLabels)
+    #frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses)
 
     # train the LSTM network
-    #sClassFile, sModelSaved = train(sFeatureDir, sModelDir, None, sLogDir, 
-    #      nFramesNorm, nFeatureLength, nBatchSize=256, nEpoch=100, fLearn=1e-3)
+    sClassFile, sModelSaved = train(sConvNet, sFeatureDir, None, sModelDir, sLogDir, 
+        nFramesNorm, nBatchSize=256, nEpoch=3, fLearn=1e-3)
 
     # evaluate features on LSTM
     #evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)

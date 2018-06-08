@@ -1,15 +1,20 @@
 """
-Extract image features with InceptionV3
 
 Code based on:
 https://github.com/harvitronix/five-video-classification-methods
 """
 
+import numpy as np
+
 from keras.preprocessing import image
-from keras.applications.inception_v3 import InceptionV3, preprocess_input
+from keras.applications import inception_v3
 from keras.models import Model, load_model
 from keras.layers import Input
-import numpy as np
+
+
+class ConvNet():
+    def
+
 
 class InceptionV3_features():
     def __init__(self):
