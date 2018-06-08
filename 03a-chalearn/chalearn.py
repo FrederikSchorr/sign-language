@@ -382,7 +382,7 @@ def main():
     #video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses)
     
     # calculate features from frames
-    frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses)
+    #frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses)
 
     # train the LSTM network
     sClassFile, sModelSaved = train(sConvNet, sFeatureDir, None, sModelDir, sLogDir, 
