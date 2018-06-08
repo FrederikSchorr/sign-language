@@ -252,7 +252,7 @@ def train(sConvNet, sFeatureDir, sModelSaved, sModelDir, sLogDir,
         # Build new model
         keModel = Sequential()
         keModel.add(LSTM(1024, return_sequences=True,
-                        input_shape=(20, 1024),
+                        input_shape=(20, 50176),
                         dropout=0.5))
         keModel.add(LSTM(1024, return_sequences=False, dropout=0.5))
         #keModel.add(Dense(256, activation='relu'))
