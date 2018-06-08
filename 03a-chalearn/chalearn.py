@@ -393,7 +393,7 @@ def main():
 
     # train the LSTM network
     sClassFile, sModelSaved = train(sConvNet, sFeatureDir, None, sModelDir, sLogDir, 
-        nFramesNorm, nBatchSize=256, nEpoch=3, fLearn=1e-3)
+        nFramesNorm, nBatchSize=256, nEpoch=200, fLearn=1e-3)
 
     # evaluate features on LSTM
     #evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
