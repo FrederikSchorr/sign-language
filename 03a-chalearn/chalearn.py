@@ -379,7 +379,7 @@ def main():
     #sModelSaved = sModelDir + "/20180525-1033-lstm-35878in249-best.h5"
     sLogDir = "03a-chalearn/log"
 
-    nClasses = 3
+    nClasses = None
     nFramesNorm = 20 # number of frames per video for feature calculation
     sConvNet = "mobilenet"
 
