@@ -12,8 +12,8 @@ from keras.models import Model, load_model
 from keras.layers import Input
 
 
-class ConvNet():
-    def
+#class ConvNet():
+#    def
 
 
 class InceptionV3_features():

@@ -25,7 +25,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 #from inceptionfeatures import InceptionV3_features
 
-from keras.models import Sequential, load_model
+from keras.models import Model, Sequential, load_model
 from keras.layers import LSTM, Dense, Dropout
 from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
@@ -116,11 +116,18 @@ def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses=None
         #keConvNet = InceptionV3_features()
     else:
         # default = MobileNet
-        keConvNet = mobilenet.MobileNet(
+        keBaseModel = mobilenet.MobileNet(
             weights="imagenet",
             input_shape = (224, 224, 3),
-            include_top = False
+            include_top = True
         )
+
+        # We'll extract features at the final pool layer.
+        keConvNet = Model(
+            inputs=keBaseModel.input,
+            outputs=keBaseModel.get_layer('global_average_pooling2d_1').output
+        )    
+        keConvNet.summary()
 
     # loop over all videos-directories. 
     # Feed all frames into ConvNet, save results in file per video
@@ -228,7 +235,7 @@ def train(sConvNet, sFeatureDir, sModelSaved, sModelDir, sLogDir,
 
     # output shape of ConvNet
     if sConvNet == "mobilenet":
-        tuFeatureShape = (nFramesNorm, 50176)
+        tuFeatureShape = (nFramesNorm, 1024)
     else: assert False
 
     # Load features
@@ -252,7 +259,7 @@ def train(sConvNet, sFeatureDir, sModelSaved, sModelDir, sLogDir,
         # Build new model
         keModel = Sequential()
         keModel.add(LSTM(1024, return_sequences=True,
-                        input_shape=(20, 50176),
+                        input_shape=tuFeatureShape,
                         dropout=0.5))
         keModel.add(LSTM(1024, return_sequences=False, dropout=0.5))
         #keModel.add(Dense(256, activation='relu'))
@@ -382,7 +389,7 @@ def main():
     #video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses)
     
     # calculate features from frames
-    #frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses)
+    frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses)
 
     # train the LSTM network
     sClassFile, sModelSaved = train(sConvNet, sFeatureDir, None, sModelDir, sLogDir, 
