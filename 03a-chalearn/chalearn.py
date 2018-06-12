@@ -269,7 +269,7 @@ def main():
     
     # calculate features from frames
     oCNN = ConvNet("mobilenet")
-    #oCNN.load_model()
+    oCNN.load_model()
     frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = None)
 
     # train the LSTM network
