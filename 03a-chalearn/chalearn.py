@@ -265,7 +265,7 @@ def main():
     #unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/val.zip", sVideoDir + "/_zip/val.txt")
 
     # extract frames from videos
-    video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses = 3)
+    video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses = None)
     
     # calculate features from frames
     oCNN = ConvNet("mobilenet")
@@ -278,7 +278,7 @@ def main():
     oRNN.build_compile(fLearn=1e-3)
     #oRNN.load_model(sModelSaved)
     oRNN = train(sFeatureDir, sModelDir, sLogDir, oRNN, 
-        nBatchSize=256, nEpoch=10)
+        nBatchSize=256, nEpoch=100)
 
     # evaluate features on LSTM
     #evaluate(sFeatureDir + "/val", oRNN)
