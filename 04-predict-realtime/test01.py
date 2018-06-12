@@ -2,6 +2,7 @@
 import time
 import os
 import glob
+import sys
 import random
 
 import numpy as np
@@ -9,7 +10,9 @@ import pandas as pd
 
 import cv2
 
-from demo import load_inception, load_lstm, frames_to_features, classify_video
+sys.path.append(os.path.abspath("03a-chalearn"))
+from deeplearning import ConvNet, RecurrentNet, VideoFeatures
+from predict import frames_to_features, classify_video
 
 
 def list_videos(sVideoDir, nSamplesMax = None):
@@ -59,12 +62,11 @@ def video_to_frames(sVideoPath):
 
 
 def main():
-	sModelFile = "03a-chalearn/model/20180606-0802-lstm-35878in249-best.h5"
+	sModelFile = "03a-chalearn/model/20180608-2306-lstm-35878in249-best.h5"
 	sClassFile = "datasets/04-chalearn/class.csv"
-	sVideoDir = "datasets/04-chalearn/train"
+	sVideoDir = "datasets/04-chalearn/val"
 
 	nFramesNorm = 20
-	nFeatureLength = 2048
 
 	print("\nStarting test from " + os.getcwd())
 
@@ -72,11 +74,14 @@ def main():
 	dfClass = pd.read_csv(sClassFile, header = 0, index_col = 0, dtype = {"sClass":str})
 
 	# read video files into list
-	liVideos = list_videos(sVideoDir, nSamplesMax = 10)
+	liVideos = list_videos(sVideoDir, nSamplesMax = 100)
 	
 	# load neural networks
-	nnCNN = load_inception()
-	nnLSTM = load_lstm(sModelFile, nFramesNorm, nFeatureLength) 
+	oCNN = ConvNet("mobilenet")
+	oCNN.load_model()
+
+	oRNN = RecurrentNet("lstm", nFramesNorm, oCNN.nOutputFeatures)
+	oRNN.load_model(sModelFile)
 
 	nCount = 0
 	nSuccess = 0
@@ -90,8 +95,8 @@ def main():
 		if len(liFrames) < nFramesNorm: continue
 
 		# run NN to translate video to label
-		arFeatures = frames_to_features(nnCNN, liFrames, nFramesNorm)
-		arLabel, arProba = classify_video(nnLSTM, arFeatures, nFramesNorm, nFeatureLength)
+		arFeatures = frames_to_features(oCNN, liFrames, nFramesNorm)
+		arLabel, arProba = classify_video(oRNN, arFeatures)
 
 		# compare groundtruth with predicted label
 		sLabelTrue = sVideoPath.split("/")[-2]
@@ -109,7 +114,7 @@ def main():
 			print("Not correctly predicted. ", end="")
 		
 		nCount += 1
-		print("Accuracy after {} samples: {:.1f}".format(nCount, nSuccess/nCount*100.0)) 
+		print("Accuracy after {} samples: {:.1f}%%".format(nCount, nSuccess/nCount*100.0)) 
 	return
 
 

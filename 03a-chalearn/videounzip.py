@@ -115,17 +115,15 @@ def main():
    
     # directories
     sVideoDir = "datasets/04-chalearn"
-    sTrainZip = sVideoDir + "/_zip/train.zip"
-    sTrainList = sVideoDir + "/_zip/train.txt"
-    sLogDir = "03a-chalearn/log"
 
     print("\nStarting ChaLearn video unzip & move in directory:", os.getcwd())
 
     # unzip ChaLearn videos and sort them in folders=label
-    #unzip_sort_videos(sVideoDir, sTrainZip, sTrainList)
+    unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/train.zip", sVideoDir + "/_zip/train.txt")
+    unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/val.zip", sVideoDir + "/_zip/val.txt")
 
     # move fraction of videos to another folder
-    move_videos(sVideoDir + "/train", sVideoDir + "/val", fFrac = 0.2)
+    #move_videos(sVideoDir + "/train", sVideoDir + "/val", fFrac = 0.2)
 
     return
 

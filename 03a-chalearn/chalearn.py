@@ -20,18 +20,16 @@ import shutil
 from subprocess import call, check_output
 import time
 
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
+from videounzip import unzip_sort_videos
 
-#from inceptionfeatures import InceptionV3_features
+from deeplearning import ConvNet, RecurrentNet, VideoClasses, VideoFeatures
 
-from keras.models import Model, Sequential, load_model
-from keras.layers import LSTM, Dense, Dropout
+#from keras.models import Model, Sequential, load_model
+#from keras.layers import LSTM, Dense, Dropout
 from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
 
-from keras.applications import mobilenet
-from keras.preprocessing import image
+import keras.preprocessing
 
 
 def video2frames(sVideoDir, sFrameDir, nFramesNorm = 20, nClasses = None):
@@ -89,11 +87,11 @@ def video2frames(sVideoDir, sFrameDir, nFramesNorm = 20, nClasses = None):
     return
 
 
-def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses=None):
+def frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses=None):
     """ Use pretrained CNN to calculate features from video-frames """
 
     # do not (partially) overwrite existing feature directory
-    if os.path.exists(sFeatureDir): raise ValueError("Folder {} alredy exists".format(sFeatureDir)) 
+    if os.path.exists(sFeatureDir): raise ValueError("Folder %s alredy exists" % sFeatureDir) 
 
     sCurrentDir = os.getcwd()
     # get list of directories with frames: ... / sFrameDir/train/class/videodir/frames.jpg
@@ -108,26 +106,6 @@ def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses=None
         liClasses = sorted(dfVideos.sLabel.unique())[:nClasses]
         dfVideos = dfVideos[dfVideos["sLabel"].isin(liClasses)]
         print("Using only %d directories from %d classes" % (len(dfVideos), nClasses))
-
-    # load ConvNet
-    if sConvNet == "inception":
-        # get the InceptionV3 model
-        assert(False) # need to update code to work with inception model
-        #keConvNet = InceptionV3_features()
-    else:
-        # default = MobileNet
-        keBaseModel = mobilenet.MobileNet(
-            weights="imagenet",
-            input_shape = (224, 224, 3),
-            include_top = True
-        )
-
-        # We'll extract features at the final pool layer.
-        keConvNet = Model(
-            inputs=keBaseModel.input,
-            outputs=keBaseModel.get_layer('global_average_pooling2d_1').output
-        )    
-        keConvNet.summary()
 
     # loop over all videos-directories. 
     # Feed all frames into ConvNet, save results in file per video
@@ -152,15 +130,13 @@ def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses=None
         for sFrame in sFrames:
             
             # load frame
-            pilFrame = image.load_img(sFrame, target_size=(224, 224))
-            arFrame = image.img_to_array(pilFrame)
+            pilFrame = keras.preprocessing.image.load_img(sFrame, target_size=oCNN.tuHeightWidth)
+            arFrame = keras.preprocessing.image.img_to_array(pilFrame)
             liFrames.append(arFrame)  
         
-        # preprocessing - specific to ConvNet
-        arFrames = mobilenet.preprocess_input(np.array(liFrames))
-        
         # predict features with ConvNet
-        arFeatures = keConvNet.predict(arFrames)
+        arFrames = oCNN.preprocess_input(np.array(liFrames))
+        arFeatures = oCNN.keModel.predict(arFrames)
        
         # flatten the features
         arFeatures = arFeatures.reshape(nFramesNorm, -1)
@@ -170,112 +146,22 @@ def frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses=None
         nCounter += 1
     return
 
-
-class Features():
-    """ Read features from disc, check size and save in arrays """
-
-    def __init__(self, sPath, tuShape, liClasses = None):
         
-        # retrieve all feature files. Expected folder structure .../train/label/feature.npy
-        self.liPaths = glob.glob(os.path.join(sPath, "*", "*.npy"))
-        self.nSamples = len(self.liPaths)
-        if self.nSamples == 0:
-            print("Error: found no feature files in %s" % sPath)
-        print("Load %d samples from %s ..." % (self.nSamples, sPath))
-
-        self.arFeatures = np.zeros((self.nSamples,) + tuShape)
-        
-        # loop through all feature files
-        self.liLabels = [] 
-        for i in range(self.nSamples):
-            
-            # Get the sequence from disc
-            sFile = self.liPaths[i]
-            arF = np.load(sFile)
-            if (arF.shape != tuShape):
-                print("ERROR: %s has wrong shape %s" % (sFile, arF.shape))
-            self.arFeatures[i] = arF
-            
-            # Extract the label from path
-            sLabel = sFile.split("/")[-2]
-            self.liLabels.append(sLabel)
-            
-        # extract classes from samples
-        self.liClasses = sorted(np.unique(self.liLabels))
-        # check if classes are already provided
-        if liClasses != None:
-            liClasses = sorted(np.unique(liClasses))
-            # check detected vs provided classes
-            if set(self.liClasses).issubset(set(liClasses)) == False:
-                # detected classes are NOT subset of provided classes
-                print("ERROR: unexpected additional classes detected")
-                print("Provided classes:", liClasses)
-                print("Detected classes:", self.liClasses)
-                assert False
-            # use superset of provided classes
-            self.liClasses = liClasses
-            
-        self.nClasses = len(self.liClasses)
-        
-        # one hot encode labels, using above classes
-        label_encoder = LabelEncoder()
-        label_encoder.fit(self.liClasses)
-        ar_n_Labels = label_encoder.transform(self.liLabels).reshape(-1,1)
-        onehot_encoder = OneHotEncoder(sparse=False)
-        self.arLabelsOneHot = onehot_encoder.fit_transform(ar_n_Labels)
-        
-        print("Loaded %d samples from %d classes" % (self.nSamples, self.nClasses))
-        
-        return
-
-        
-def train(sConvNet, sFeatureDir, sModelSaved, sModelDir, sLogDir, 
-          nFramesNorm = 20, nBatchSize=16, nEpoch=100, fLearn=1e-4):
+def train(sFeatureDir, sModelDir, sLogDir, oRNN,
+          nBatchSize=16, nEpoch=100, fLearn=1e-4):
     print("\nTrain LSTM ...")
 
-    # output shape of ConvNet
-    if sConvNet == "mobilenet":
-        tuFeatureShape = (nFramesNorm, 1024)
-    else: assert False
-
     # Load features
-    oFeatureTrain = Features(sFeatureDir + "/train", tuFeatureShape)
-    oFeatureVal = Features(sFeatureDir + "/val", tuFeatureShape, liClasses = oFeatureTrain.liClasses)
+    oFeatureTrain = VideoFeatures(sFeatureDir + "/train", 
+        oRNN.nFramesNorm, oRNN.nFeatureLength, oRNN.oClasses.liClasses)
+    oFeatureVal = VideoFeatures(sFeatureDir + "/val", 
+        oRNN.nFramesNorm, oRNN.nFeatureLength, oRNN.oClasses.liClasses)
 
     # prep logging
     os.makedirs(sLogDir, exist_ok=True)
     sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
         str(oFeatureTrain.nSamples + oFeatureVal.nSamples) + "in" + str(oFeatureTrain.nClasses)
-
-    # save class names
-    dfClass = pd.DataFrame(oFeatureTrain.liClasses, columns=["sClass"])
-    sClassFile = sLogDir + "/" + sLog + "-class.csv"
-    dfClass.to_csv(sClassFile)
     
-    # Build a simple LSTM network. We pass the extracted features from
-    # our CNN to this model     
-    
-    if sModelSaved == None:
-        # Build new model
-        keModel = Sequential()
-        keModel.add(LSTM(1024, return_sequences=True,
-                        input_shape=tuFeatureShape,
-                        dropout=0.5))
-        keModel.add(LSTM(1024, return_sequences=False, dropout=0.5))
-        #keModel.add(Dense(256, activation='relu'))
-        #keModel.add(Dropout(0.5))
-        keModel.add(Dense(oFeatureTrain.nClasses, activation='softmax'))
-
-        # Now compile the network.
-        optimizer = Adam(lr=fLearn)
-        keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    else:
-        # load model from file
-        print("Loading saved LSTM neural network %s ..." % sModelSaved)
-        keModel = load_model(sModelSaved)
-        assert keModel.input_shape == ((None, ) + tuFeatureShape)
-
-    keModel.summary()
     # Helper: TensorBoard
     #tb = TensorBoard(log_dir=os.path.join("../data/90-logs", model))
 
@@ -292,7 +178,7 @@ def train(sConvNet, sFeatureDir, sModelSaved, sModelDir, sLogDir,
         verbose = 1, save_best_only = True)
  
     # Fit!
-    keModel.fit(
+    oRNN.keModel.fit(
         oFeatureTrain.arFeatures,
         oFeatureTrain.arLabelsOneHot,
         batch_size = nBatchSize,
@@ -306,53 +192,43 @@ def train(sConvNet, sFeatureDir, sModelSaved, sModelDir, sLogDir,
     
     # save model
     sModelSaved = sModelDir + "/" + sLog + "-last.h5"
-    keModel.save(sModelSaved)
+    oRNN.keModel.save(sModelSaved)
 
-    return sClassFile, sModelSaved
+    return oRNN
 
 
-def evaluate(sFeatureDir, sModelSaved, nFramesNorm, nFeatureLength):    
+def evaluate(sFeatureDir, oRNN):    
     """ evaluate all features in given directory on saved model """
     print("\nEvaluate LSTM ...")
 
     # Load features
-    oFeatures = Features(sFeatureDir, nFramesNorm, nFeatureLength)
-
-    # load model from file
-    print("Loading saved LSTM neural network %s ..." % sModelSaved)
-    keModel = load_model(sModelSaved)
-    assert(keModel.input_shape == (None, nFramesNorm, nFeatureLength))
+    oFeatures = VideoFeatures(sFeatureDir, 
+        oRNN.nFramesNorm, oRNN.nFeatureLength, oRNN.oClasses.liClasses)
 
     # evaluate 
-    liResult = keModel.evaluate(
+    liResult = oRNN.keModel.evaluate(
         oFeatures.arFeatures,
         oFeatures.arLabelsOneHot,
         batch_size = None,
         verbose = 1)
     
-    print(keModel.metrics_names)
+    print(oRNN.keModel.metrics_names)
     print(liResult)
 
     return
 
 
-def predict(sFeatureDir, sModelSaved, sClassFile, nFramesNorm, nFeatureLength):    
+def predict(sFeatureDir, oRNN):    
     """ predict class for all features in given directory on saved model """
     
     print("\nPredict features on LSTM ...")
-    # load classes description: nIndex,sClass,sLong,sCat,sDetail
-    dfClass = pd.read_csv(sClassFile, header = 0, index_col = 0, dtype = {"sClass":str})
     
-    # Load features
-    oFeatures = Features(sFeatureDir, nFramesNorm, nFeatureLength)
-
-    # load model from file
-    print("Loading saved LSTM neural network %s ..." % sModelSaved)
-    keModel = load_model(sModelSaved)
-    assert(keModel.input_shape == (None, nFramesNorm, nFeatureLength))
+    # Load video features
+    oFeatures = VideoFeatures(sFeatureDir, 
+        oRNN.nFramesNorm, oRNN.nFeatureLength, oRNN.oClasses.liClasses)
 
     # predict
-    arProba = keModel.predict(
+    arProba = oRNN.keModel.predict(
         oFeatures.arFeatures, 
         batch_size = None, 
         verbose = 1
@@ -363,7 +239,7 @@ def predict(sFeatureDir, sModelSaved, sClassFile, nFramesNorm, nFeatureLength):
     #print("Groundtruth:", oFeatures.liLabels)
     #print("Predicted:  ", arPred)
     #print("Predicted:  ", dfClass.sClass[arPred])
-    print("Accuracy: {:.3f}".format(np.mean(oFeatures.liLabels == dfClass.sClass[arPred])))
+    print("Accuracy: {:.3f}".format(np.mean(oFeatures.liLabels == oRNN.oClasses.dfClass.loc[arPred, "sClass"])))
 
     return
 
@@ -376,30 +252,39 @@ def main():
     sFrameDir = "03a-chalearn/data/frame-20"
     sFeatureDir = "03a-chalearn/data/feature-mobilenet"
     sModelDir = "03a-chalearn/model"
-    #sModelSaved = sModelDir + "/20180525-1033-lstm-35878in249-best.h5"
     sLogDir = "03a-chalearn/log"
 
-    nClasses = None
+    sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
+
     nFramesNorm = 20 # number of frames per video for feature calculation
-    sConvNet = "mobilenet"
 
     print("\nStarting ChaLearn extraction & train in directory:", os.getcwd())
 
+    # unzip ChaLearn videos and sort them in folders=label
+    #unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/train.zip", sVideoDir + "/_zip/train.txt")
+    #unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/val.zip", sVideoDir + "/_zip/val.txt")
+
     # extract frames from videos
-    #video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses)
+    #video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses = None)
     
     # calculate features from frames
-    frames2features(sConvNet, sFrameDir, sFeatureDir, nFramesNorm, nClasses)
+    oCNN = ConvNet("mobilenet")
+    #oCNN.load_model()
+    frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = 10)
 
     # train the LSTM network
-    sClassFile, sModelSaved = train(sConvNet, sFeatureDir, None, sModelDir, sLogDir, 
-        nFramesNorm, nBatchSize=256, nEpoch=200, fLearn=1e-3)
+    oClasses = VideoClasses(sClassFile)
+    oRNN = RecurrentNet("lstm", nFramesNorm, oCNN.nOutputFeatures, oClasses)
+    oRNN.build_compile(fLearn=1e-3)
+    #oRNN.load_model(sModelSaved)
+    oRNN = train(sFeatureDir, sModelDir, sLogDir, oRNN, 
+        nBatchSize=256, nEpoch=10)
 
     # evaluate features on LSTM
-    #evaluate(sFeatureDir + "/val", sModelSaved, nFramesNorm, nFeatureLength)
+    #evaluate(sFeatureDir + "/val", oRNN)
 
     # predict labels from features
-    #predict(sFeatureDir + "/val", sModelSaved, sClassFile, nFramesNorm, nFeatureLength)
+    predict(sFeatureDir + "/val", oRNN)
 
 if __name__ == '__main__':
     main()

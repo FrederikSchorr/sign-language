@@ -70,15 +70,16 @@ def video_capture(oStream, sColor, sText, nTimeDuration):
 	# loop over frames from the video file stream
 	while True:
 		# grab the frame from the threaded video file stream
-		(bGrabbed, oFrame) = oStream.read()
-		liFrames.append(oFrame)
+		(bGrabbed, arFrame) = oStream.read()
+		#print(type(arFrame), arFrame.shape)
+		liFrames.append(arFrame)
 
 		fTimeElapsed = time.time() - fTimeStart
 		s = sText + str(int(fTimeElapsed)+1) + " sec"
 
 		# paint rectangle & text, show the frame
-		oFrame = rectangle_text(cv2.flip(oFrame, 1), sColor, s)
-		cv2.imshow("Video", oFrame)
+		arFrame = rectangle_text(cv2.flip(arFrame, 1), sColor, s)
+		cv2.imshow("Video", arFrame)
 	
 		# stop after nTimeDuration sec
 		if fTimeElapsed >= nTimeDuration: break
