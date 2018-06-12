@@ -23,6 +23,7 @@ def unzip_sort_videos(sVideoDir, sZipFile, sListFile):
     to move videos into folders=labels
     """
 
+    print("Unzipping and sorting ChaLearn videos from %s into %s" % (sZipFile, sVideoDir))
     # save current directory
     sCurrentDir = os.getcwd()
 

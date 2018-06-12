@@ -265,12 +265,12 @@ def main():
     #unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/val.zip", sVideoDir + "/_zip/val.txt")
 
     # extract frames from videos
-    #video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses = None)
+    video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses = 10)
     
     # calculate features from frames
     oCNN = ConvNet("mobilenet")
     #oCNN.load_model()
-    frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = 10)
+    frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = None)
 
     # train the LSTM network
     oClasses = VideoClasses(sClassFile)
