@@ -52,7 +52,7 @@ def main():
 
     LEARNING_RATE = 1e-2
     EPOCHS = 5
-    BATCHSIZE = 64
+    BATCHSIZE = 16
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
 
