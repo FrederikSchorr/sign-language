@@ -18,6 +18,7 @@ import pandas as pd
 import category_encoders.one_hot
 
 from video2frame import file2frame, frames_trim, image_crop, frames_show
+from preprocess import videos2frames
 
 from i3d_inception import Inception_Inflated3d, add_top_layer
 
@@ -114,7 +115,7 @@ def main():
    
     # directories
     sClassFile = "../datasets/04-chalearn/class.csv"
-    #sVideoDir = "../datasets/04-chalearn"
+    sVideoDir = "../datasets/04-chalearn"
     sFrameDir = "06-i3d/data/frame"
 
     sModelDir = "06-i3d/model"
@@ -129,13 +130,16 @@ def main():
     NUM_FLOW_CHANNELS = 2
 
     LEARNING_RATE = 1e-2
-    EPOCHS = 5
+    EPOCHS = 10
     BATCHSIZE = 4
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
 
     # read the ChaLearn classes
     oClasses = VideoClasses(sClassFile)
+
+    # extract images
+    videos2frames(sVideoDir, sFrameDir, nClasses = 20)
 
     # Load training data
     oFramesTrain = VideoFrames(sFrameDir + "/train", 
