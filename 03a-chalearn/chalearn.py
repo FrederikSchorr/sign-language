@@ -268,7 +268,7 @@ def main():
     #video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses = None)
     
     # calculate features from frames
-    #oCNN = ConvNet("mobilenet")
+    oCNN = ConvNet("mobilenet")
     #oCNN.load_model()
     #frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = None)
 
