@@ -44,7 +44,7 @@ def videos2frames(sVideoDir:str, sFrameDir:str, nClasses = None):
     for sVideoPath in dfVideos.sVideoPath:
 
         # slice videos into frames with OpenCV
-        arFrames = video2frame(sVideoPath)
+        arFrames = video2frame(sVideoPath, nMinDim = 240)
         
         # create diretory (assumed directories see above)
         li_sVideoPath = sVideoPath.split("/")
@@ -69,7 +69,7 @@ def main():
 
     print("Extracting ChaLearn frames and optical flow ...")
     
-    videos2frames(sVideoDir, sFrameDir, nClasses = 3)
+    videos2frames(sVideoDir, sFrameDir)
 
     return
 

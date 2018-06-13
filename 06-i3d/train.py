@@ -15,93 +15,14 @@ import time
 import numpy as np
 import pandas as pd
 
-import category_encoders.one_hot
-
-from video2frame import file2frame, frames_trim, image_crop, frames_show
 from preprocess import videos2frames
-
+from datagenerator import VideoClasses, FramesGenerator
 from i3d_inception import Inception_Inflated3d, add_top_layer
 
 import keras
 #from keras.optimizers import SGD
 #from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
 
-
-class VideoClasses():
-
-    def __init__(self, sClassFile:str):
-        # load label description: index, sClass, sLong, sCat, sDetail
-        self.dfClass = pd.read_csv(sClassFile)
-        self.liClasses = list(self.dfClass.sClass)
-        self.nClasses = len(self.dfClass)
-        return
-
-
-class VideoFrames():
-    """ Read (video) frames from disc, check shape, resize, onehot labels 
-    
-    Assume frames directories:
-    ... / sPath / class / videoname / frame.jpg
-    """
-
-    def __init__(self, sPath:str, nFrames:int, nHeight:int, nWidth:int, nDepth:int, liClasses:list = None):
-        
-        # retrieve all videos = frame directories
-        liPaths = glob.glob(sPath + "/*/*")
-        self.nSamples = len(liPaths)
-        if self.nSamples == 0: raise ValueError("Found no frame directories files in " + sPath)
-        print("Load %d samples from %s ..." % (self.nSamples, sPath))
-
-        self.arFrames = np.zeros((self.nSamples, nFrames, nHeight, nWidth, nDepth))
-        self.liLabels = [] 
-        
-        # loop through all videos = frame directories
-        for i in range(self.nSamples):
-            
-            # Get the frames from disc
-            sFrameDir = liPaths[i]
-            arFrames = file2frame(sFrameDir)
-            
-            # crop to centered image
-            arFrames = image_crop(arFrames, nHeight, nWidth)
-            
-            # normalize the number of frames (if upsampling necessary => in the end)
-            arFrames = frames_trim(arFrames, nFrames)
-            
-            if i % 100 == 0: print("  #%5d Video %s: frames %s" % (i, sFrameDir, str(arFrames.shape)))
-            #frames_show(arFrames, 10)
-
-            self.arFrames[i] = arFrames
-            
-            # Extract the label from path
-            sLabel = sFrameDir.split("/")[-2]
-            self.liLabels.append(sLabel)
-            
-        # extract unique classes from all detected labels
-        self.liClasses = sorted(np.unique(self.liLabels))
-
-        # if classes are provided upfront
-        if liClasses != None:
-            liClasses = sorted(np.unique(liClasses))
-            # check detected vs provided classes
-            if set(self.liClasses).issubset(set(liClasses)) == False:
-                raise ValueError("Detected classes are NOT subset of provided classes")
-            # use superset of provided classes
-            self.liClasses = liClasses
-            
-        self.nClasses = len(self.liClasses)
-        
-        # one hot encode labels, using above classes
-        one_hot = category_encoders.one_hot.OneHotEncoder(
-            return_df=False, handle_unknown="error", verbose = 1)
-        one_hot.fit(self.liClasses)
-        self.arLabelsOneHot = one_hot.transform(self.liLabels)
-        
-        print("Loaded %d samples from %d classes, labels onehot shape %s" % \
-            (self.nSamples, self.nClasses, str(self.arLabelsOneHot.shape)))
-        
-        return
-        
 
 def layers_freeze(keModel:keras.Model) -> keras.Model:
     print("Freeze all layers ...")
@@ -139,12 +60,12 @@ def main():
     oClasses = VideoClasses(sClassFile)
 
     # extract images
-    videos2frames(sVideoDir, sFrameDir, nClasses = 20)
+    #videos2frames(sVideoDir, sFrameDir, nClasses = 20)
 
     # Load training data
-    oFramesTrain = VideoFrames(sFrameDir + "/train", 
+    genFramesTrain = FramesGenerator(sFrameDir + "/train", BATCHSIZE, 
         NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS, oClasses.liClasses)
-    oFramesVal = VideoFrames(sFrameDir + "/val", 
+    genFramesVal = FramesGenerator(sFrameDir + "/val", BATCHSIZE,
         NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS, oClasses.liClasses)
 
     # Load pretrained i3d model and adjust top layer 
@@ -162,10 +83,10 @@ def main():
     keI3D_rgb.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     keI3D_rgb.summary()    
         
-    # prep logging
+    # Prep logging
     os.makedirs(sLogDir, exist_ok=True)
     sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
-        str(oFramesTrain.nSamples + oFramesVal.nSamples) + "in" + str(oClasses.nClasses)
+        str(genFramesTrain.nSamples + genFramesVal.nSamples) + "in" + str(oClasses.nClasses)
     
     # Helper: Save results
     csv_logger = keras.callbacks.CSVLogger(sLogDir + "/" + sLog + "-acc.csv")
@@ -177,14 +98,13 @@ def main():
         verbose = 1, save_best_only = True)
  
     # Fit!
-    keI3D_rgb.fit(
-        oFramesTrain.arFrames,
-        oFramesTrain.arLabelsOneHot,
-        batch_size = BATCHSIZE,
+    keI3D_rgb.fit_generator(
+        generator = genFramesTrain,
+        validation_data = genFramesVal,
         epochs = EPOCHS,
+        workers = 0,                 # only during dev/test
+        use_multiprocessing = False, # only during dev/test
         verbose = 1,
-        shuffle=True,
-        validation_data=(oFramesVal.arFrames, oFramesVal.arLabelsOneHot),
         callbacks=[csv_logger, checkpointer]
     )    
     

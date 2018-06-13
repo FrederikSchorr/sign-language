@@ -12,7 +12,7 @@ import cv2
 #from subprocess import call
 
 
-def resize_aspectratio(arImage: np.array, nMinDim:int = 224) -> np.array:
+def resize_aspectratio(arImage: np.array, nMinDim:int = 256) -> np.array:
     nHeigth, nWidth, _ = arImage.shape
 
     if nWidth >= nHeigth:
@@ -24,11 +24,11 @@ def resize_aspectratio(arImage: np.array, nMinDim:int = 224) -> np.array:
     return cv2.resize(arImage, dsize = (0,0), fx = fRatio, fy = fRatio, interpolation=cv2.INTER_LINEAR)
 
 
-def video2frame(sVideoPath:str) -> np.array:
+def video2frame(sVideoPath:str, nMinDim:int = 256) -> np.array:
     """ Read video file with OpenCV and return array of frames
 
     Frames are resized preserving aspect ratio 
-    so that the smallest dimension is 224 pixels, 
+    so that the smallest dimension is 256 pixels, 
     with bilinear interpolation
     """
     
@@ -45,7 +45,7 @@ def video2frame(sVideoPath:str) -> np.array:
         if bGrabbed == False: break
 
         # resize image
-        arFrameResized = resize_aspectratio(arFrame, 224)
+        arFrameResized = resize_aspectratio(arFrame, nMinDim)
 
 		# Save the resulting frame to list
         liFrames.append(arFrameResized)
