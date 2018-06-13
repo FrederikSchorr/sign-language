@@ -3,7 +3,7 @@ import glob
 import numpy as np
 import pandas as pd
 
-import sklearn
+from sklearn.preprocessing import LabelEncoder
 import keras
 
 from video2frame import file2frame, frames_trim, image_crop, frames_show
@@ -36,11 +36,11 @@ class FramesGenerator(keras.utils.Sequence):
         print("Detected %d samples in %s ..." % (self.nSamples, sPath))
 
         # extract (text) labels from path
-        seLabels = dfVideos.sFrameDir.apply(lambda s: s.split("/")[2])
-        dfVideos.loc[:, "sLabel"] = seLabels
+        seLabels =  self.dfVideos.sFrameDir.apply(lambda s: s.split("/")[-2])
+        self.dfVideos.loc[:, "sLabel"] = seLabels
             
         # extract unique classes from all detected labels
-        self.liClasses = sorted(list(dfVideos.sLabel.unique()))
+        self.liClasses = sorted(list(self.dfVideos.sLabel.unique()))
 
         # if classes are provided upfront
         if liClassesFull != None:
@@ -54,19 +54,20 @@ class FramesGenerator(keras.utils.Sequence):
         self.nClasses = len(self.liClasses)
 
         # encode labels
-        trLabelEncoder = sklearn.preprocessing.LabelEncoder()
+        trLabelEncoder = LabelEncoder()
         trLabelEncoder.fit(self.liClasses)
-        dfVideos.loc[:, "nLabel"] = trLabelEncoder.transform(dfVideos.sLabel)
+        self.dfVideos.loc[:, "nLabel"] = trLabelEncoder.transform(self.dfVideos.sLabel)
         
         self.on_epoch_end()
         return
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.nSamples) / self.nBatchSize))
+        return int(np.floor(self.nSamples / self.nBatchSize))
 
     def __getitem__(self, nStep):
         'Generate one batch of data'
+
         # Generate indexes of the batch
         indexes = self.indexes[nStep*self.nBatchSize:(nStep+1)*self.nBatchSize]
 
@@ -80,12 +81,12 @@ class FramesGenerator(keras.utils.Sequence):
         arY = np.empty((nBatchSize), dtype = int)
 
         # Generate data
-        for i in range(nBatchsize):
+        for i in range(nBatchSize):
             # generate data for single video(frames)
             arX[i,], arY[i] = self.__data_generation(dfVideosBatch.iloc[i,:])
 
         # onehot the labels
-        return X, keras.utils.to_categorical(arY, num_classes=self.nClasses)
+        return arX, keras.utils.to_categorical(arY, num_classes=self.nClasses)
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -94,8 +95,8 @@ class FramesGenerator(keras.utils.Sequence):
             np.random.shuffle(self.indexes)
 
     def __data_generation(self, seVideo:pd.Series) -> (np.array, int):
-        'Generates data for 1 sample'
-        
+        'Generates data for 1 sample' 
+       
         # Get the frames from disc
         arFrames = file2frame(seVideo.sFrameDir)
         

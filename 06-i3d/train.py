@@ -81,7 +81,7 @@ def main():
     # Use same optimizer as in https://github.com/deepmind/kinetics-i3d
     optimizer = keras.optimizers.SGD(lr = LEARNING_RATE, momentum = 0.9, decay = 1e-7)
     keI3D_rgb.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    keI3D_rgb.summary()    
+    #keI3D_rgb.summary()    
         
     # Prep logging
     os.makedirs(sLogDir, exist_ok=True)
@@ -98,12 +98,14 @@ def main():
         verbose = 1, save_best_only = True)
  
     # Fit!
+    print("Fit with generator ...")
     keI3D_rgb.fit_generator(
         generator = genFramesTrain,
         validation_data = genFramesVal,
         epochs = EPOCHS,
-        workers = 0,                 # only during dev/test
-        use_multiprocessing = False, # only during dev/test
+        workers = 4,                 
+        use_multiprocessing = True,
+        max_queue_size = 4, 
         verbose = 1,
         callbacks=[csv_logger, checkpointer]
     )    
