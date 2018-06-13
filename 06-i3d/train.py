@@ -60,7 +60,7 @@ def main():
     oClasses = VideoClasses(sClassFile)
 
     # extract images
-    #videos2frames(sVideoDir, sFrameDir, nClasses = 20)
+    videos2frames(sVideoDir, sFrameDir, nClasses = None)
 
     # Load training data
     genFramesTrain = FramesGenerator(sFrameDir + "/train", BATCHSIZE, 
