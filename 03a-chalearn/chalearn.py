@@ -247,8 +247,8 @@ def predict(sFeatureDir, oRNN):
 def main():
    
     # directories
-    sClassFile = "datasets/04-chalearn/class.csv"
-    sVideoDir = "datasets/04-chalearn"
+    sClassFile = "../datasets/04-chalearn/class.csv"
+    sVideoDir = "../datasets/04-chalearn"
     sFrameDir = "03a-chalearn/data/frame-20"
     sFeatureDir = "03a-chalearn/data/feature-mobilenet"
     sModelDir = "03a-chalearn/model"
