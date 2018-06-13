@@ -51,8 +51,8 @@ def main():
     NUM_FLOW_CHANNELS = 2
 
     LEARNING_RATE = 1e-2
-    EPOCHS = 10
-    BATCHSIZE = 4
+    EPOCHS = 5
+    BATCHSIZE = 64
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
 
