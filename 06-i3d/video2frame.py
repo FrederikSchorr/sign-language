@@ -21,8 +21,10 @@ def resize_aspectratio(arImage: np.array, nMinDim:int = 256) -> np.array:
     else: 
         fRatio = nMinDim / nWidth
 
-    return cv2.resize(arImage, dsize = (0,0), fx = fRatio, fy = fRatio, interpolation=cv2.INTER_LINEAR)
+    if fRatio != 1.0:
+        arImage = cv2.resize(arImage, dsize = (0,0), fx = fRatio, fy = fRatio, interpolation=cv2.INTER_LINEAR)
 
+    return arImage
 
 def video2frame(sVideoPath:str, nMinDim:int = 256) -> np.array:
     """ Read video file with OpenCV and return array of frames
