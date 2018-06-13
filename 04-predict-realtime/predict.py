@@ -67,7 +67,7 @@ def classify_video(oRNN, arFeatures):
 
 
 def main():
-	sModelFile = "03a-chalearn/model/20180608-2306-lstm-35878in249-best.h5"
+	sModelFile = "03a-chalearn/model/20180612-0847-lstm-41662in249-last.h5"
 	sClassFile = "datasets/04-chalearn/class.csv"
 	nFramesNorm = 20
 
