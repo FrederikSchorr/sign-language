@@ -50,8 +50,8 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    LEARNING_RATE = 1e-2
-    EPOCHS = 5
+    LEARNING_RATE = 1e-1
+    EPOCHS = 1
     BATCHSIZE = 4
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
