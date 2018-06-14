@@ -98,12 +98,12 @@ def main():
         verbose = 1, save_best_only = True)
  
     # Fit!
-    print("Fit with generator ...")
+    print("Fit with generator, learning rate %f ..." % LEARNING_RATE)
     keI3D_rgb.fit_generator(
         generator = genFramesTrain,
         validation_data = genFramesVal,
         epochs = EPOCHS,
-        workers = 4,                 
+        workers = 8,                 
         use_multiprocessing = True,
         max_queue_size = 4, 
         verbose = 1,
