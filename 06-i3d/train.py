@@ -50,7 +50,7 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    LEARNING_RATE = 1e-1
+    LEARNING_RATE = 1e-2
     EPOCHS = 5
     BATCHSIZE = 4
 
