@@ -114,6 +114,16 @@ def image_crop(arFrames:np.array, nHeightTarget, nWidthTarget) -> np.array:
     return arFrames
 
 
+def image_rescale(arFrames:np.array) -> np.array(float):
+    """ Normalize array of images (rgb 0-255) to [-1.0, 1.0]
+    """
+
+    ar_fFrames = arFrames / 127.5
+    ar_fFrames -= 1.
+
+    return ar_fFrames
+
+
 def frames_show(arFrames:np.array, nWaitMilliSec:int = 100):
 
     nFrames, nHeight, nWidth, nDepth = arFrames.shape

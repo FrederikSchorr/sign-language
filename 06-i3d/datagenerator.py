@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import keras
 
-from video2frame import file2frame, frames_trim, image_crop, frames_show
+from video2frame import file2frame, frames_trim, image_crop, image_rescale, frames_show
 
 class FramesGenerator(keras.utils.Sequence):
     """Read and yields video frames for Keras.model.fit_generator
@@ -77,7 +77,7 @@ class FramesGenerator(keras.utils.Sequence):
         nBatchSize = len(dfVideosBatch)
 
         # initialize arrays
-        arX = np.empty((nBatchSize, ) + self.tuXshape, dtype = int)
+        arX = np.empty((nBatchSize, ) + self.tuXshape, dtype = float)
         arY = np.empty((nBatchSize), dtype = int)
 
         # Generate data
@@ -94,19 +94,22 @@ class FramesGenerator(keras.utils.Sequence):
         if self.bShuffle == True:
             np.random.shuffle(self.indexes)
 
-    def __data_generation(self, seVideo:pd.Series) -> (np.array, int):
+    def __data_generation(self, seVideo:pd.Series) -> (np.array(float), int):
         'Generates data for 1 sample' 
        
         # Get the frames from disc
-        arFrames = file2frame(seVideo.sFrameDir)
+        ar_nFrames = file2frame(seVideo.sFrameDir)
         
         # crop to centered image
-        arFrames = image_crop(arFrames, self.nHeight, self.nWidth)
-        
-        # normalize the number of frames (if upsampling necessary => in the end)
-        arFrames = frames_trim(arFrames, self.nFrames)
+        ar_nFrames = image_crop(ar_nFrames, self.nHeight, self.nWidth)
 
-        return arFrames, seVideo.nLabel
+        # normalize to [-1.0, 1.0]
+        ar_fFrames = image_rescale(ar_nFrames)
+        
+        # normalize the number of frames (if upsampling necessary => in the end, otherwise better early)
+        ar_fFrames = frames_trim(ar_fFrames, self.nFrames)
+
+        return ar_fFrames, seVideo.nLabel
 
 
 class VideoClasses():

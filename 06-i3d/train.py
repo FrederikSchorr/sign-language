@@ -50,9 +50,9 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    LEARNING_RATE = 1e-2
+    LEARNING_RATE = 1e-1
     EPOCHS = 5
-    BATCHSIZE = 16
+    BATCHSIZE = 4
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
 
@@ -60,7 +60,7 @@ def main():
     oClasses = VideoClasses(sClassFile)
 
     # extract images
-    videos2frames(sVideoDir, sFrameDir, nClasses = None)
+    #videos2frames(sVideoDir, sFrameDir, nClasses = None)
 
     # Load training data
     genFramesTrain = FramesGenerator(sFrameDir + "/train", BATCHSIZE, 
