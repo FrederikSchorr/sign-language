@@ -80,12 +80,13 @@ def video2frames(sVideoDir, sFrameDir, nFramesNorm = 20, nClasses = None):
 
 def main():
    
+    nClasses = 20
+    nFramesNorm = 20 # number of frames per video for feature calculation
+
     # directories
     sClassFile = "data-set/04-chalearn/class.csv"
     sVideoDir = "data-set/04-chalearn"
-    sFrameDir = "data-temp/04-chalearn/frame-003-20"
-
-    nFramesNorm = 20 # number of frames per video for feature calculation
+    sFrameDir = "data-temp/04-chalearn/%03d-frame-20"%(nClasses)
 
     print("\nStarting ChaLearn extraction in directory:", os.getcwd())
 
@@ -94,7 +95,7 @@ def main():
     #unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/val.zip", sVideoDir + "/_zip/val.txt")
 
     # extract frames from videos
-    video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses = 3)
+    video2frames(sVideoDir, sFrameDir, nFramesNorm, nClasses)
 
 if __name__ == '__main__':
     main()

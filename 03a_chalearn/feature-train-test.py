@@ -191,17 +191,18 @@ def predict(sFeatureDir, oRNN):
 
 def main():
    
+    nClasses = 20
+    nFramesNorm = 20 # number of frames per video for feature calculation
+
     # directories
     sClassFile = "data-set/04-chalearn/class.csv"
     #sVideoDir = "data-set/04-chalearn"
-    sFrameDir = "data-temp/04-chalearn/003-oflow-20"
-    sFeatureDir = "data-temp/04-chalearn/003-oflow-20-mobilenet"
+    sFrameDir = "data-temp/04-chalearn/%03d-oflow-20"%(nClasses)
+    sFeatureDir = "data-temp/04-chalearn/%03d-oflow-20-mobilenet"%(nClasses)
     sModelDir = "model"
     sLogDir = "log"
 
     #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
-
-    nFramesNorm = 20 # number of frames per video for feature calculation
 
     print("\nStarting ChaLearn extraction & train in directory:", os.getcwd())
 
@@ -215,7 +216,7 @@ def main():
     # calculate features from frames
     oCNN = ConvNet("mobilenet")
     oCNN.load_model()
-    frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = None)
+    frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses)
 
     # train the LSTM network
     oClasses = VideoClasses(sClassFile)

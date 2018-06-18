@@ -65,8 +65,10 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
 
 
 def main():
-    sFrameDir = "data-temp/04-chalearn/frame-003-20"
-    sFlowDir =  "data-temp/04-chalearn/oflow-003-20"
+    nClasses = 20
+
+    sFrameDir = "data-temp/04-chalearn/%03d-frame-20"%(nClasses)
+    sFlowDir =  "data-temp/04-chalearn/%03d-oflow-20"%(nClasses)
 
     print("\nChaLearn videos: calculating optical flow from frames ...")
 
