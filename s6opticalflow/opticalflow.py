@@ -13,8 +13,7 @@ import pandas as pd
 
 import cv2
 
-sys.path.append(os.path.abspath("06-i3d"))
-from video2frame import video2frames, frames_show
+from s7i3d.video2frame import video2frames, frames_show
 
 
 def frames2flows(arFrames:np.array(int), fBound:float = 15.) -> np.array(int):

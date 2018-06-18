@@ -16,18 +16,21 @@ from math import ceil
 import os
 import glob
 import shutil
+import warnings
 
 from subprocess import call, check_output
 import time
 
-from videounzip import unzip_sort_videos
+from s3chalearn.videounzip import unzip_sort_videos
 
 
 def video2frames(sVideoDir, sFrameDir, nFramesNorm = 20, nClasses = None):
     """ Extract frames from videos """
     
     # do not (partially) overwrite existing frame directory
-    if os.path.exists(sFrameDir): raise ValueError("Folder {} alredy exists".format(sFrameDir)) 
+    if os.path.exists(sFrameDir): 
+        warnings.warn("\nFrames folder " + sFrameDir + " alredy exists, extraction stopped ")
+        return 
 
     # get videos. Assume sVideoDir / train / class / video.avi
     dfVideos = pd.DataFrame(glob.glob(sVideoDir + "/*/*/*.avi"), columns=["sVideoPath"])

@@ -131,7 +131,7 @@ class ConvNet():
         
         else: raise ValueError("Unknown CNN model")
 
-        self.keModel.summary()
+        #self.keModel.summary()
 
         return
 
@@ -188,7 +188,7 @@ class RecurrentNet():
         optimizer = keras.optimizers.Adam(lr=fLearn)
         self.keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
-        self.keModel.summary()
+        #self.keModel.summary()
         return    
 
     def load_model(self, sModelPath):

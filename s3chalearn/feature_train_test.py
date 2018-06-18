@@ -17,12 +17,14 @@ import os
 import glob
 import shutil
 
+import warnings
+
 from subprocess import call, check_output
 import time
 
-from videounzip import unzip_sort_videos
+from s3chalearn.videounzip import unzip_sort_videos
 
-from deeplearning import ConvNet, RecurrentNet, VideoClasses, VideoFeatures
+from s3chalearn.deeplearning import ConvNet, RecurrentNet, VideoClasses, VideoFeatures
 
 #from keras.models import Model, Sequential, load_model
 #from keras.layers import LSTM, Dense, Dropout
@@ -36,7 +38,9 @@ def frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses=None):
     """ Use pretrained CNN to calculate features from video-frames """
 
     # do not (partially) overwrite existing feature directory
-    if os.path.exists(sFeatureDir): raise ValueError("Folder %s alredy exists" % sFeatureDir) 
+    if os.path.exists(sFeatureDir): 
+        warnings.warn("\nFeature folder " + sFeatureDir + " alredy exists, calculation stopped") 
+        return
 
     sCurrentDir = os.getcwd()
     # get list of directories with frames: ... / sFrameDir/train/class/videodir/frames.jpg
@@ -92,7 +96,7 @@ def frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses=None):
     return
 
         
-def train(sFeatureDir, sModelDir, sLogDir, oRNN,
+def train(sFeatureDir, sModelDir, sLogPath, oRNN,
           nBatchSize=16, nEpoch=100, fLearn=1e-4):
     print("\nTrain LSTM ...")
 
@@ -102,24 +106,13 @@ def train(sFeatureDir, sModelDir, sLogDir, oRNN,
     oFeatureVal = VideoFeatures(sFeatureDir + "/val", 
         oRNN.nFramesNorm, oRNN.nFeatureLength, oRNN.oClasses.liClasses)
 
-    # prep logging
-    os.makedirs(sLogDir, exist_ok=True)
-    sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
-        str(oFeatureTrain.nSamples + oFeatureVal.nSamples) + "in" + str(oFeatureTrain.nClasses)
-    
-    # Helper: TensorBoard
-    #tb = TensorBoard(log_dir=os.path.join("../data/90-logs", model))
-
-    # Helper: Stop when we stop learning.
-    #early_stopper = EarlyStopping(patience=5)
-
     # Helper: Save results
-    csv_logger = CSVLogger(os.path.join(sLogDir, sLog + '-acc.csv'))
+    csv_logger = CSVLogger(sLogPath.split(".")[0] + "-acc.csv")
 
     # Helper: Save the model
     os.makedirs(sModelDir, exist_ok=True)
     checkpointer = ModelCheckpoint(
-        filepath = sModelDir + "/" + sLog + "-best.h5",
+        filepath = sLogPath.split(".")[0] + "-best.h5",
         verbose = 1, save_best_only = True)
  
     # Fit!
@@ -136,7 +129,7 @@ def train(sFeatureDir, sModelDir, sLogDir, oRNN,
     )    
     
     # save model
-    sModelSaved = sModelDir + "/" + sLog + "-last.h5"
+    sModelSaved = sLogPath.split(".")[0] + "-last.h5"
     oRNN.keModel.save(sModelSaved)
 
     return oRNN

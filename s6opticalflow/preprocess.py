@@ -17,9 +17,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
-sys.path.append(os.path.abspath("06-i3d"))
-from video2frame import video2frames, file2frames, frames_show
-from opticalflow import frames2flows, flows2file, file2flows, flows2colorimages
+from s7i3d.video2frame import video2frames, file2frames, frames_show
+from s6opticalflow.opticalflow import frames2flows, flows2file, file2flows, flows2colorimages
 
 
 def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
@@ -34,7 +33,7 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
 
     # do not (partially) overwrite existing directory
     if os.path.exists(sFlowBaseDir): 
-        warnings.warn("Optical flow folder " + sFlowBaseDir + " alredy exists: flow calculation stopped")
+        warnings.warn("\nOptical flow folder " + sFlowBaseDir + " alredy exists: flow calculation stopped")
         return
 
     # get list of directories with frames: ... / sFrameDir/train/class/videodir/frames.jpg
