@@ -8,11 +8,13 @@ Assume ChaLearn videos are stored:
 
 import os
 import glob
+import sys
 
 import numpy as np
 import pandas as pd
 
-from video2frame import video2frames, frames2file
+sys.path.append(os.path.abspath("."))
+from s7i3d.video2frame import video2frames, frames2file
 
 def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
     """ Extract frames from videos 
