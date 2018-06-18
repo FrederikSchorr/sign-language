@@ -10,7 +10,7 @@ from s3chalearn.feature_train_test import frames2features, train, evaluate, pred
 
 def main():
    
-    nClasses = 20 # number of classes
+    nClasses = 249 # number of classes
     nFramesNorm = 20 # number of frames per video for feature calculation
 
     # directories
@@ -20,8 +20,8 @@ def main():
     sFlowDir     = "data-temp/04-chalearn/%03d-oflow-20"%(nClasses)
     sFeatureDir  = "data-temp/04-chalearn/%03d-oflow-20-mobilenet"%(nClasses)
     sModelDir    = "model"
-    sLogPath     = "log/" + time.strftime("%Y%m%d-%H%M") + \
-        "chalearn%03d-oflow-lstm.csv"%(nClasses)
+    sLogPath     = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
+        "-chalearn%03d-oflow-lstm.csv"%(nClasses)
 
     print("\nStarting ChaLearn with optical flow and mobilenet+lstm in directory:", os.getcwd())
 
@@ -38,7 +38,7 @@ def main():
     # calculate features from frames
     oCNN = ConvNet("mobilenet")
     oCNN.load_model()
-    frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses)
+    frames2features(sFlowDir, sFeatureDir, oCNN, nFramesNorm, nClasses)
 
     # train the LSTM network
     oClasses = VideoClasses(sClassFile)
