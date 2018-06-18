@@ -23,8 +23,8 @@ from subprocess import call, check_output
 import time
 
 from s3chalearn.videounzip import unzip_sort_videos
-
 from s3chalearn.deeplearning import ConvNet, RecurrentNet, VideoClasses, VideoFeatures
+from s3chalearn.feature import frames2features
 
 #from keras.models import Model, Sequential, load_model
 #from keras.layers import LSTM, Dense, Dropout
@@ -32,68 +32,6 @@ from keras.optimizers import Adam, RMSprop
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
 
 import keras.preprocessing
-
-
-def frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses=None):
-    """ Use pretrained CNN to calculate features from video-frames """
-
-    # do not (partially) overwrite existing feature directory
-    if os.path.exists(sFeatureDir): 
-        warnings.warn("\nFeature folder " + sFeatureDir + " alredy exists, calculation stopped") 
-        return
-
-    sCurrentDir = os.getcwd()
-    # get list of directories with frames: ... / sFrameDir/train/class/videodir/frames.jpg
-    os.chdir(sFrameDir)
-    dfVideos = pd.DataFrame(glob.glob("*/*/*"), dtype=str, columns=["sFrameDir"])
-    os.chdir(sCurrentDir)
-    print("Found %d directories=videos with frames" % len(dfVideos))
-
-    # eventually restrict to first nLabels
-    if nClasses != None:
-        dfVideos.loc[:,"sLabel"] = dfVideos.sFrameDir.apply(lambda s: s.split("/")[-2])
-        liClasses = sorted(dfVideos.sLabel.unique())[:nClasses]
-        dfVideos = dfVideos[dfVideos["sLabel"].isin(liClasses)]
-        print("Using only %d directories from %d classes" % (len(dfVideos), nClasses))
-
-    # loop over all videos-directories. 
-    # Feed all frames into ConvNet, save results in file per video
-    nCounter = 0
-    for _, seVideo in dfVideos.iterrows():
-
-        # save resulting list of features in file in eg "data/feature/train/label/video.npy"
-        sFeaturePath = os.path.join(sFeatureDir, seVideo.sFrameDir + ".npy")
-        if (os.path.exists(sFeaturePath)):
-            # if feature already etracted, skip
-            print("%5d | Features %s already exist" % (nCounter, sFeaturePath))
-            continue
-        os.makedirs(os.path.dirname(sFeaturePath), exist_ok=True)
-
-        # retrieve frame files - in ascending order
-        sFrames = sorted(glob.glob(os.path.join(sFrameDir, seVideo.sFrameDir, "*.jpg")))
-        print("%5d | Extracting features from %d frames to %s" % (nCounter, len(sFrames), sFeaturePath))
-        assert(len(sFrames) == nFramesNorm)
-
-        # assemble array with all images
-        liFrames = []
-        for sFrame in sFrames:
-            
-            # load frame
-            pilFrame = keras.preprocessing.image.load_img(sFrame, target_size=oCNN.tuHeightWidth)
-            arFrame = keras.preprocessing.image.img_to_array(pilFrame)
-            liFrames.append(arFrame)  
-        
-        # predict features with ConvNet
-        arFrames = oCNN.preprocess_input(np.array(liFrames))
-        arFeatures = oCNN.keModel.predict(arFrames)
-       
-        # flatten the features
-        arFeatures = arFeatures.reshape(nFramesNorm, -1)
-
-        # save to file
-        np.save(sFeaturePath, arFeatures)
-        nCounter += 1
-    return
 
         
 def train(sFeatureDir, sModelDir, sLogPath, oRNN,
@@ -112,7 +50,7 @@ def train(sFeatureDir, sModelDir, sLogPath, oRNN,
     # Helper: Save the model
     os.makedirs(sModelDir, exist_ok=True)
     checkpointer = ModelCheckpoint(
-        filepath = sLogPath.split(".")[0] + "-best.h5",
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-best.h5",
         verbose = 1, save_best_only = True)
  
     # Fit!
@@ -129,7 +67,7 @@ def train(sFeatureDir, sModelDir, sLogPath, oRNN,
     )    
     
     # save model
-    sModelSaved = sLogPath.split(".")[0] + "-last.h5"
+    sModelSaved = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-last.h5"
     oRNN.keModel.save(sModelSaved)
 
     return oRNN
@@ -188,12 +126,12 @@ def main():
     nFramesNorm = 20 # number of frames per video for feature calculation
 
     # directories
-    sClassFile = "data-set/04-chalearn/class.csv"
-    #sVideoDir = "data-set/04-chalearn"
-    sFrameDir = "data-temp/04-chalearn/%03d-oflow-20"%(nClasses)
-    sFeatureDir = "data-temp/04-chalearn/%03d-oflow-20-mobilenet"%(nClasses)
-    sModelDir = "model"
-    sLogDir = "log"
+    sClassFile      = "data-set/04-chalearn/class.csv"
+    #sVideoDir      = "data-set/04-chalearn"
+    sFrameDir       = "data-temp/04-chalearn/%03d-oflow-20"%(nClasses)
+    sFeatureDir     = "data-temp/04-chalearn/%03d-oflow-20-mobilenet"%(nClasses)
+    sModelDir       = "model"
+    sLogDir         = "log"
 
     #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
 
