@@ -1,0 +1,142 @@
+1 Mudra1/Ardhachandra 2 Mudra1/Ardhapataka 3 Mudra1/Chandrakala 4 Mudra1/Chatura
+5 Mudra1/Kartarimukha
+ChineseNumbers/er
+GangHandSignals1/Victory
+RefereeVolleyballSignals1/DoubleHit
+RefereeWrestlingSignals1/AwardingPoints
+TaxiSouthAfrica/TaxiHandSigns8
+6 Mudra1/Pataka 7 Mudra1/Sarpashirsha 8 Mudra1/Shikhara
+CanadaAviationGroundCirculation1/ToutVaBienContinuez
+DivingSignals3/Ascend
+9 Mudra1/Tripataka 10 Mudra1/Trishula
+11 Mudra2/Anjali ChineseNumbers/san
+12 Mudra2/Chakram 13 Mudra2/Hamsapaksha 14 Mudra2/Mayura
+15 Mudra2/Mrigashirsha 16 Mudra2/Sandamsha 17 Mudra2/Swastikam
+18 Mudra2/Tamrachuda
+ChineseNumbers/jiu
+19 Mudra2/Vitarka
+DivingSignals4/OK
+GangHandSignals2/OK
+20 ItalianGestures/AndateVia
+22 ItalianGestures/CheFurbo 21 ItalianGestures/Bellissima
+23 ItalianGestures/ChePalle 24 ItalianGestures/CheVuoi 25 ItalianGestures/DAccordo
+26 ItalianGestures/Madonna 27 ItalianGestures/NonMiFrega 28 ItalianGestures/Perfetto 29 ItalianGestures/SeiPazzo
+30 ItalianGestures/VieniQua 31 ChineseNumbers/ba 32 ChineseNumbers/ling DivingSignals1/Think
+34 ChineseNumbers/qi 35 ChineseNumbers/shi TaxiSouthAfrica/TaxiHandSigns5 33 ChineseNumbers/liu
+36 ChineseNumbers/si,
+RefereeVolleyballSignals1/FourHits
+37 ChineseNumbers/wu
+TaxiSouthAfrica/TaxiHandSigns7
+38 ChineseNumbers/yi
+CraneHandSignals/CableUp
+TaxiSouthAfrica/TaxiHandSigns4
+39 GestunoColors/654_colour_couleur
+40 GestunoColors/655_black_noir
+41 GestunoColors/656_white_blanc 42 GestunoColors/657_red_rouge 43 GestunoColors/658_yellow_jaune
+44 GestunoColors/659_orange_orange 45 GestunoColors/660_bleu_blue 46 GestunoColors/661_green_vert 47 GestunoColors/662_purple_violet
+48 GestunoColors/663_brown_brun 49 GestunoDisaster/102_thunderstorm_orage 50 GestunoDisaster/108_tide_maree 51 GestunoDisaster/109_dought_secheresse
+52 GestunoDisaster/110_earthquake_trembleme
+ntdeterre
+53 GestunoDisaster/111_famine_famine 54 GestunoDisaster/112_flood_inondation 55 GestunoDisaster/113_tornado_tornade
+56 GestunoDisaster/114_hurricane_ouragan 57 GestunoLandscape/63_moon_lune 58 GestunoLandscape/64_sky_ciel 59 GestunoLandscape/66_star_etoile
+60 GestunoLandscape/67_sun_soleil 61 GestunoLandscape/81_hill_colline 62 GestunoLandscape/82_mountain_montagne
+63 GestunoLandscape/83_valley_vall
+ee
+64 GestunoLandscape/84_summit_sommet 65 GestunoLandscape/85_volcano_volcan 66 GestunoLandscape/88_desert_desert 67 GestunoLandscape/89_lake_lac
+68 GestunoLandscape/90_river_fleuve 69 GestunoLandscape/91_sea_mer 70 GestunoSmallAnimals/125_bird_oiseau 71 GestunoSmallAnimals/127_butterfly_papillon
+72 GestunoSmallAnimals/129_cat_chat 73 GestunoSmallAnimals/131_crab_crabe 74 GestunoSmallAnimals/132_dog_chien 75 GestunoSmallAnimals/134_fish_-
+poisson
+76 GestunoSmallAnimals/141_mouse_souris 77 GestunoSmallAnimals/143_pigeon_pigeon 78 GestunoSmallAnimals/150_worm_ver 79 GestunoTopography/65_space_espace
+80 GestunoTopography/77_city_ville 81 GestunoTopography/78_suburbs_banlieu 82 GestunoTopography/79_village_village 83 GestunoTopography/80_countryside_campagne
+84 GestunoTopography/86_soil_sol 85 GestunoTopography/87_ground_terre 86 GestunoTopography/92_harbour_port 87 GestunoTopography/93_peninsula
+_penisule
+88 GestunoTopography/94_island_ile 89 GestunoTopography/95_region_region 90 MusicNotes/do 91 MusicNotes/do2
+92 MusicNotes/fa
+DivingSignals3/Descend
+93 MusicNotes/la 94 MusicNotes/mi 95 MusicNotes/re
+96 MusicNotes/sol 97 MusicNotes/ti 98 CanadaAviationGroundCirculation1/Coupez
+99 CanadaAviationGroundCirculation1/DemarrezMoteurs
+100 CanadaAviationGroundCirculation1/DirigezVousVers
+101 CanadaAviationGroundCirculation1/FaceMe
+102 CanadaAviationGroundCirculation1/Freins
+103 CanadaAviationGroundCirculation1/Incendie 104 CanadaAviationGroundCirculation1/Ralentissez
+105 CanadaAviationGroundCirculation1/VirezADroite
+106 CanadaAviationGroundCirculation1/VirezAGauche
+107 CanadaAviationGroundCirculation2/AlimentationBranchee
+108 CanadaAviationGroundCirculation2/AlimentationDeBranchee
+109 CanadaAviationGroundCirculation2/Avancez
+110 CanadaAviationGroundCirculation2/CalesEnlevees
+111 CanadaAviationGroundCirculation2/CalesMi
+ses
+112 CanadaAviationGroundCirculation2/Faites
+TournerLaQueueVersLaDroite,
+113 CanadaAviationGroundCirculation2/Fait
+esTournerLaQueueVersLaGauche
+114 CanadaAviationGroundCirculation
+2/Halte
+115 CanadaAviationGroundCirculation2/Ralentiss
+ezLeMoteurDuCoteIndique
+116 CanadaAviationGroundCirculation2/Recul
+ez
+117 CraneHandSignals/BoomUp
+SwatHandSignals1/Friendly
+118 CraneHandSignals/EmergencySto
+p
+119 CraneHandSignals/EverythingSlow 120 CraneHandSignals/LowerBoom
+SwatHandSignals1/Hostile
+122 CraneHandSignals/RaiseLoadSlowly
+124 CraneHandSignals/RoutineStop 121 CraneHandSignals/LowerLoadSlowly 123 CraneHandSignals/RetractBoom
+125 CraneHandSignals/SwingBoom 126 CraneHandSignals/TrolleyOut 127 CraneHandSignals/WalkCraneForward
+RefereeVolleyballSignals1/Substitution
+128 DivingSignals1/Around
+130 DivingSignals1/Danger 131 DivingSignals1/DontKnow 129 DivingSignals1/ComeHere
+132 DivingSignals1/OKsurface 133 DivingSignals1/Over 134 DivingSignals1/Under 135 DivingSignals1/Watch
+136 DivingSignals2/CannotOpenReserve 137 DivingSignals2/Cold 138 DivingSignals2/Help SwatHandSignals2/LookSearch
+139 DivingSignals2/Me 140 DivingSignals2/Meet 141 DivingSignals2/OutOfAir 142 DivingSignals2/PressureBalancePb
+143 DivingSignals2/ReserveOpened 144 DivingSignals2/Stop 145 DivingSignals2/You 146 DivingSignals3/Boat
+147 DivingSignals3/Fast 148 DivingSignals3/NotUnderstood 149 DivingSignals3/Slowly 150 DivingSignals3/SomethingWrong
+151 DivingSignals3/TieUp 152 DivingSignals3/Vertigo 153 DivingSignals3/Wreck 154 DivingSignals4/HoldHands
+155 DivingSignals4/HowMuchAir 156 DivingSignals4/Lead 157 DivingSignals4/LevelOff 158 DivingSignals4/MoveApart
+159 DivingSignals4/StayTogether 160 DivingSignals4/WhichWay 161 GangHandSignals1/Blood 162 GangHandSignals1/ComptonCrip
+163 GangHandSignals1/Crip 164 GangHandSignals1/EastSide 165 GangHandSignals1/HooberCrio 166 GangHandSignals1/MafiaCrips
+167 GangHandSignals1/UndergroundCrip 168 GangHandSignals2/Killas 169 GangHandSignals2/LatinKings 170 GangHandSignals2/OKBloodKilla
+171 GangHandSignals2/OKCripKilla 172 GangHandSignals2/Piru 173 GangHandSignals2/WestCoast 174 GangHandSignals2/WestSide
+175 HelicopterSignals/HoldHover 176 HelicopterSignals/Land 177 HelicopterSignals/LiftOff 178 HelicopterSignals/MoveDownward
+179 HelicopterSignals/MoveForward 180 HelicopterSignals/MoveLeft 181 HelicopterSignals/MoveRight 182 HelicopterSignals/MoveUpward
+183 HelicopterSignals/ReleaseSlingLoad 184 RefereeVolleyballSignals1/BallOut 185 RefereeVolleyballSignals1/BallOutAfterPlayerContact
+186 RefereeVolleyballSignals1/DoubleFaultOrPlayover
+187 RefereeVolleyballSignals1/EndOfGame 188 RefereeVolleyballSignals1/IllegalBlockOrScreen
+RefereeWrestlingSignals1/NeutralPosition
+189 RefereeVolleyballSignals1/Timeout 190 RefereeVolleyballSignals2/BallInBounds
+191 ,RefereeVolleyballSignals2/BallServedIntoNetPlayerTouchingNet
+192 RefereeVolleyballSignals2/BeckoningTheServe
+193 RefereeVolleyballSignals2/CenterLineViolation
+194 RefereeVolleyballSignals2/HeldThrownLiftedCarried
+195 RefereeVolleyballSignals2/IllegalAttackOrBlockOverNet
+196 RefereeVolleyballSignals2/LossOfRallyOrPoint
+197 RefereeVolleyballSignals2/OutOfRotationOrOverlap
+198 RefereeWrestlingSignals1/DeferChoice 199 RefereeWrestlingSignals1/FalseStart 200 RefereeWrestlingSignals1/FlagrantMisconduct
+201 RefereeWrestlingSignals1/IllegalHold
+202 RefereeWrestlingSignals1/InterlockingHands 203 RefereeWrestlingSignals1/NearFall 204 RefereeWrestlingSignals1/NoControl 205 RefereeWrestlingSignals1/out ofBounds
+206 RefereeWrestlingSignals2/PotentiallyDangerous
+207 RefereeWrestlingSignals2/Reversal 208 RefereeWrestlingSignals2/Stalemate 209 RefereeWrestlingSignals2/Stalling
+SwatHandSignals1/Breacher
+210 RefereeWrestlingSignals2/StartInjuryClock
+TractorOperationSignals/RaiseEquipment
+211 RefereeWrestlingSignals2/StopInjuryClock 212 RefereeWrestlingSignals2/StopMatch
+214 RefereeWrestlingSignals2/TimeOut TractorOperationSignals/Stop 215 RefereeWrestlingSignals2/WrestlerInControl
+213 RefereeWrestlingSignals2/TechnicalViolation
+TaxiSouthAfrica/TaxiHandSigns1
+216 SurgeonSignals/ArmyNavyRetractor 217 SurgeonSignals/CurvedForceps 218 SurgeonSignals/CurvedScissors
+219 SurgeonSignals/NeedleHolder 220 SurgeonSignals/Scalpel 221 SurgeonSignals/StraightForceps
+222 SurgeonSignals/StraightScissors 223 SurgeonSignals/Syringe 224 SurgeonSignals/TissueForceps 225 SwatHandSignals1/DogNeeded
+226 SwatHandSignals1/MirrorNeeded 227 SwatHandSignals1/OKClear 228 SwatHandSignals1/Quickly 229 SwatHandSignals1/Stop
+230 SwatHandSignals2/CoverNeeded 231 SwatHandSignals2/DoorClosed 232 SwatHandSignals2/DoorOpen 233 SwatHandSignals2/Listen
+234 SwatHandSignals2/ManDown 235 SwatHandSignals2/Obstruction 236 SwatHandSignals2/ToMe 237 TaxiSouthAfrica/TaxiHandSigns10
+238 TaxiSouthAfrica/TaxiHandSigns2 239 TaxiSouthAfrica/TaxiHandSigns3 240 TaxiSouthAfrica/TaxiHandSigns6 241 TaxiSouthAfrica/TaxiHandSigns9
+TractorOperationSignals/LowerEq
+uipment
+242 TractorOperationSignals/ComeToMe 243 TractorOperationSignals/MoveOut 244 TractorOperationSignals/MoveTowardM
+e
+245 TractorOperationSignals/SlowItDown 246 TractorOperationSignals/SpeedItUp 247 TractorOperationSignals/StartTheEngine
+248 TractorOperationSignals/StopTheEngine 249 TractorOperationSignals/ThisFarToGo

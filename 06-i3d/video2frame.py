@@ -26,7 +26,7 @@ def resize_aspectratio(arImage: np.array, nMinDim:int = 256) -> np.array:
 
     return arImage
 
-def video2frame(sVideoPath:str, nMinDim:int = 256) -> np.array:
+def video2frames(sVideoPath:str, nMinDim:int = 256) -> np.array:
     """ Read video file with OpenCV and return array of frames
 
     Frames are resized preserving aspect ratio 
@@ -55,7 +55,7 @@ def video2frame(sVideoPath:str, nMinDim:int = 256) -> np.array:
     return np.array(liFrames)
 
 
-def frame2file(arFrames:np.array, sTargetDir:str):
+def frames2file(arFrames:np.array, sTargetDir:str):
     """ Write array of frames to jpg files
     Input: arFrames = (number of frames, height, width, depth)
     """
@@ -65,7 +65,7 @@ def frame2file(arFrames:np.array, sTargetDir:str):
     return
 
 
-def file2frame(sPath:str) -> np.array:
+def file2frames(sPath:str) -> np.array:
     # important to sort image files upfront
     liFiles = sorted(glob.glob(sPath + "/*.jpg"))
     if len(liFiles) == 0: raise ValueError("No frames found in " + sPath)
@@ -129,40 +129,7 @@ def frames_show(arFrames:np.array, nWaitMilliSec:int = 100):
     nFrames, nHeight, nWidth, nDepth = arFrames.shape
     
     for i in range(nFrames):
-        cv2.imshow("Frame", arFrames[i,...])
+        cv2.imshow("Frame", arFrames[i, :, :, :])
         cv2.waitKey(nWaitMilliSec)
 
     return
-
-
-def frame2flow(liFrames:list, sFlowDir_u:str, sFlowDir_v:str, nBound = 15):
-       
-    liFlows = []
-
-    # initialize with first frame
-    arPrev = liFrames[0]
-    arPrev = cv2.cvtColor(arPrev, cv2.COLOR_BGR2GRAY)
-
-    nCount = 0
-    # loop through all frames
-    for arFrame in liFrames:
-        arFrame = cv2.cvtColor(arFrame, cv2.COLOR_BGR2GRAY)
-        
-        arFlow = cv2.calcOpticalFlowFarneback(arPrev,arFrame,
-            flow=None, pyr_scale=0.5, levels=1, winsize=15, iterations=2,
-            poly_n=5, poly_sigma=1.1, flags=0)
-
-        arFlow = (arFlow + nBound) * (255.0 / (2*nBound))
-        arFlow = np.round(arFlow).astype(int)
-        arFlow[arFlow >= 255] = 255
-        arFlow[arFlow <= 0] = 0
-        
-        # save in list and to file
-        liFlows.append(arFlow)
-        cv2.imwrite(sFlowDir_u + "/farneback{:04d}.jpg".format(nCount), arFlow[:, :, 0])
-        cv2.imwrite(sFlowDir_v + "/farneback{:04d}.jpg".format(nCount), arFlow[:, :, 1])
-
-        arPrev = arFrame
-        nCount += 1
-
-    return liFlows

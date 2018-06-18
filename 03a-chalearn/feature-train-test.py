@@ -32,61 +32,6 @@ from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogg
 import keras.preprocessing
 
 
-def video2frames(sVideoDir, sFrameDir, nFramesNorm = 20, nClasses = None):
-    """ Extract frames from videos """
-    
-    # do not (partially) overwrite existing frame directory
-    if os.path.exists(sFrameDir): raise ValueError("Folder {} alredy exists".format(sFrameDir)) 
-
-    # get videos. Assume sVideoDir / train / class / video.avi
-    dfVideos = pd.DataFrame(glob.glob(sVideoDir + "/*/*/*.avi"), columns=["sVideoPath"])
-    print("Located {} videos in {}, extracting {} frames each to {} ..."\
-        .format(len(dfVideos), sVideoDir, nFramesNorm, sFrameDir))
-
-    # eventually restrict to first nLabels
-    if nClasses != None:
-        dfVideos.loc[:,"sLabel"] = dfVideos.sVideoPath.apply(lambda s: s.split("/")[-2])
-        liClasses = sorted(dfVideos.sLabel.unique())[:nClasses]
-        dfVideos = dfVideos[dfVideos["sLabel"].isin(liClasses)]
-        print("Using only {} videos from {} classes".format(len(dfVideos), nClasses))
-
-    nCounter = 0
-    # loop through all videos and extract frames
-    for sVideoPath in dfVideos.sVideoPath:
-        
-        # source path: ... / sVideoDir / train / class / video.avi
-        li_sVideoPath = sVideoPath.split("/")
-        if len(li_sVideoPath) < 4: raise ValueError("Video path should have min 4 components: {}".format(str(li_sVideoPath)))
-        sVideoName = li_sVideoPath[-1].split(".")[0]
-
-        # create frame directory for each video
-        sDir = sFrameDir + "/" + li_sVideoPath[-3] + "/" + li_sVideoPath[-2] + "/" + sVideoName
-        os.makedirs(sDir, exist_ok=True)
-        
-        # determine length of video in sec and deduce frame rate
-        fVideoSec = int(check_output(["mediainfo", '--Inform=Video;%Duration%', sVideoPath]))/1000.0
-        #nFramesPerSec = int(ceil(nFramesNorm / fVideoSec))
-        fFramesPerSec = nFramesNorm / fVideoSec
-
-        # call ffmpeg to extract frames from videos
-        sFrames = sDir + "/frame-%03d.jpg"
-        call(["ffmpeg", "-loglevel", "error" ,"-y", "-i", sVideoPath, \
-            "-r", str(fFramesPerSec), "-frames", str(nFramesNorm), sFrames])
-            
-        # check right number of frames
-        nFrames = len(glob.glob(sDir + "/*.jpg"))
-        print("%5d | %s | %2.3fsec | %.1ffps | %df" % \
-            (nCounter, sDir, fVideoSec, fFramesPerSec, nFrames))
-        if nFrames != nFramesNorm: raise ValueError("Incorrect number of frames extracted")
-        nCounter += 1
-
-    # check number of created frames
-    nFramesTotal = len(glob.glob(sFrameDir + "/*/*/*/*.jpg"))
-    print("%d frames extracted from %d videos" % (nFramesTotal, len(dfVideos)))
-
-    return
-
-
 def frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses=None):
     """ Use pretrained CNN to calculate features from video-frames """
 
@@ -247,14 +192,14 @@ def predict(sFeatureDir, oRNN):
 def main():
    
     # directories
-    sClassFile = "../datasets/04-chalearn/class.csv"
-    sVideoDir = "../datasets/04-chalearn"
-    sFrameDir = "03a-chalearn/data/frame-20"
-    sFeatureDir = "03a-chalearn/data/feature-mobilenet"
-    sModelDir = "03a-chalearn/model"
-    sLogDir = "03a-chalearn/log"
+    sClassFile = "data-set/04-chalearn/class.csv"
+    #sVideoDir = "data-set/04-chalearn"
+    sFrameDir = "data-temp/04-chalearn/003-oflow-20"
+    sFeatureDir = "data-temp/04-chalearn/003-oflow-20-mobilenet"
+    sModelDir = "model"
+    sLogDir = "log"
 
-    sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
+    #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
 
     nFramesNorm = 20 # number of frames per video for feature calculation
 
@@ -269,8 +214,8 @@ def main():
     
     # calculate features from frames
     oCNN = ConvNet("mobilenet")
-    #oCNN.load_model()
-    #frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = None)
+    oCNN.load_model()
+    frames2features(sFrameDir, sFeatureDir, oCNN, nFramesNorm, nClasses = None)
 
     # train the LSTM network
     oClasses = VideoClasses(sClassFile)
@@ -278,7 +223,7 @@ def main():
     oRNN.build_compile(fLearn=1e-3)
     #oRNN.load_model(sModelSaved)
     oRNN = train(sFeatureDir, sModelDir, sLogDir, oRNN, 
-        nBatchSize=256, nEpoch=100)
+        nBatchSize=256, nEpoch=5)
 
     # evaluate features on LSTM
     #evaluate(sFeatureDir + "/val", oRNN)

@@ -12,9 +12,9 @@ import glob
 import numpy as np
 import pandas as pd
 
-from video2frame import video2frame, frame2file
+from video2frame import video2frames, frames2file
 
-def videos2frames(sVideoDir:str, sFrameDir:str, nClasses = None):
+def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
     """ Extract frames from videos 
     
     Input video structure:
@@ -69,7 +69,7 @@ def main():
 
     print("Extracting ChaLearn frames and optical flow ...")
     
-    videos2frames(sVideoDir, sFrameDir)
+    videosDir2framesDir(sVideoDir, sFrameDir)
 
     return
 
