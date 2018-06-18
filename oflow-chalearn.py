@@ -10,7 +10,7 @@ from s3chalearn.feature_train_test import frames2features, train, evaluate, pred
 
 def main():
    
-    nClasses = 2 # number of classes
+    nClasses = 20 # number of classes
     nFramesNorm = 20 # number of frames per video for feature calculation
 
     # directories
