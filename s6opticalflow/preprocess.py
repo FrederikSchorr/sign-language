@@ -17,6 +17,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+sys.path.append(os.path.abspath("."))
 from s7i3d.video2frame import video2frames, file2frames, frames_show
 from s6opticalflow.opticalflow import frames2flows, flows2file, file2flows, flows2colorimages
 
@@ -64,10 +65,10 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
 
 
 def main():
-    nClasses = 20
+    nClasses = 249
 
-    sFrameDir = "data-temp/04-chalearn/%03d-frame-20"%(nClasses)
-    sFlowDir =  "data-temp/04-chalearn/%03d-oflow-20"%(nClasses)
+    sFrameDir = "data-temp/04-chalearn/%03d-frame"%(nClasses)
+    sFlowDir =  "data-temp/04-chalearn/%03d-oflow"%(nClasses)
 
     print("\nChaLearn videos: calculating optical flow from frames ...")
 
