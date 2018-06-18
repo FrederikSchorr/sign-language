@@ -70,7 +70,7 @@ def main():
 
     sModelDir       = "model"
     #sModelRGB       = sModelDir + "/20180612-0847-lstm-41662in249-best.h5"
-    sModelRGB       = sModelDir + "/20180613-2242-lstm-41662in249-best.h5"
+    sModelRGB       = sModelDir + "/20180608-2306-lstm-35878in249-best.h5"
     sModelFlow      = sModelDir + "/20180618-1210-chalearn249-oflow-lstm-best.h5"
 
     print("\nPredict with combined rgb + flow LSTM models. \nCurrent directory:", os.getcwd())
