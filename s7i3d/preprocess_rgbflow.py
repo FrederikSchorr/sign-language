@@ -9,7 +9,7 @@ from s6opticalflow.preprocess import framesDir2flowsDir
 
 def main():
    
-    nClasses = 3 # number of classes
+    nClasses = 249 # number of classes
 
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
