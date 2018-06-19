@@ -43,16 +43,16 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str,
     print("Predict I3D features with generator ... ")
     arPredictions = keI3D.predict_generator(
         generator = genFrames,
-        workers = 0, #4,                 
-        use_multiprocessing = False, #True,
-        #max_queue_size = 8, 
+        workers = 4,                 
+        use_multiprocessing = True,
+        max_queue_size = 8, 
         verbose = 1)   
     print("I3D features shape %s" % (str(arPredictions.shape)))
 
+    # check number of predictions
     nPredictions = arPredictions.shape[0] 
     if nPredictions != genFrames.nSamples: raise ValueError("Unexpected number of predictions")
 
-    #print("Predict I3D features 1-by-1 ...")  
     # loop through all samples
     for i in range(nPredictions):
         arFeature = arPredictions[i, ...]
@@ -96,7 +96,7 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    BATCHSIZE = 4
+    BATCHSIZE = 32
 
     print("\nStarting ChaLearn optical flow to I3D features calculation in directory:", os.getcwd())
 
