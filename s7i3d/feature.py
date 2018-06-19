@@ -93,6 +93,20 @@ def main():
     # initialize
     oClasses = VideoClasses(sClassFile)
 
+
+    # Load pretrained i3d rgb model without top layer 
+    print("Load pretrained I3D rgb model ...")
+    keI3D_rgb = Inception_Inflated3d(
+        include_top=False,
+        weights='rgb_imagenet_and_kinetics',
+        input_shape=(NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS))
+    #keI3D_rgb.summary() 
+
+    # calculate features from rgb frames
+    framesDir2featuresDir(sFrameDir + "/val", sFrameFeatureDir + "/val", keI3D_rgb, BATCHSIZE, oClasses)
+    framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_rgb, BATCHSIZE, oClasses)
+
+
     # Load pretrained i3d flow model without top layer 
     print("Load pretrained I3D flow model ...")
     keI3D_flow = Inception_Inflated3d(
@@ -103,7 +117,7 @@ def main():
 
     # calculate features from optical flow
     framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, BATCHSIZE, oClasses)
-    framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
+    framesDir2featuresDir(sFlowDir + "/train", sFlowFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
 
     return
     
