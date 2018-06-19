@@ -65,7 +65,7 @@ def train_i3d_top(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.Mo
 
 def main():
    
-    nClasses = 3
+    nClasses = 249
 
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
@@ -77,7 +77,7 @@ def main():
     sModelDir        = "model"
 
     LEARNING_RATE = 1e-3
-    EPOCHS = 100
+    EPOCHS = 50
     BATCHSIZE = 16
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
@@ -95,14 +95,14 @@ def main():
     train_i3d_top(sFrameFeatureDir, sModelDir, sLogPath, keI3D_top_rgb, oClasses,
         BATCHSIZE, EPOCHS, LEARNING_RATE)
 
-    """# FLOW: Load empty i3d top layer and train it
+    # FLOW: Load empty i3d top layer and train it
     print("Load new I3D flow top model ...")
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
         "-chalearn%03d-oflow-i3dtop.csv"%(nClasses)
 
     keI3D_top_flow = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
     train_i3d_top(sFlowFeatureDir, sModelDir, sLogPath, keI3D_top_flow, oClasses,
-        BATCHSIZE, EPOCHS, LEARNING_RATE)"""           
+        BATCHSIZE, EPOCHS, LEARNING_RATE)           
 
     return
     

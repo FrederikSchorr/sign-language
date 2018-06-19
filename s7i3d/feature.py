@@ -80,7 +80,7 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str,
 
 def main():
    
-    nClasses = 3
+    nClasses = 249
 
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
