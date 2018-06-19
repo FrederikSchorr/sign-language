@@ -51,6 +51,7 @@ def predict_i3d_top(sFeatureDir:str, sModelPath:str, nBatchSize:int, oClasses:Vi
         workers = 1,                 
         use_multiprocessing = False,
         verbose = 1)
+    if arProba.shape[0] != genFeatures.nSamples: raise ValueError("Unexpected number of predictions")
 
     arPred = arProba.argmax(axis=1)
     liLabels = list(genFeatures.dfSamples.sLabel)
@@ -68,9 +69,9 @@ def main():
     sClassFile       = "data-set/04-chalearn/class.csv"
     #sVideoDir       = "data-set/04-chalearn"
     #sFrameDir        = "data-temp/04-chalearn/%03d/frame"%(nClasses)
-    sFrameFeatureDir = "data-temp/04-chalearn/%03d/frame-i3d/val"%(nClasses)
+    sFrameFeatureDir = "data-temp/04-chalearn/%03d/frame-i3d/train"%(nClasses)
     #sFlowDir         = "data-temp/04-chalearn/%03d/oflow"%(nClasses)
-    sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d/val"%(nClasses)
+    sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d/train"%(nClasses)
 
     sModelDir       = "model"
     sModelRGB       = sModelDir + "/20180619-1524-chalearn003-rgb-i3dtop-best.h5"
