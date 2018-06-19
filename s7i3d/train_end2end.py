@@ -11,6 +11,7 @@ https://github.com/harvitronix/five-video-classification-methods
 import os
 import glob
 import time
+import sys
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,7 @@ import pandas as pd
 import keras
 
 sys.path.append(os.path.abspath("."))
-from s7i3d.preprocess import videos2frames
+from s7i3d.preprocess import videosDir2framesDir
 from s7i3d.datagenerator import VideoClasses, FramesGenerator
 from s7i3d.i3d_inception import Inception_Inflated3d, add_i3d_top
 
@@ -33,15 +34,16 @@ def layers_freeze(keModel:keras.Model) -> keras.Model:
 
 def main():
    
+    nClasses = 3
+
     # directories
-    sClassFile = "../datasets/04-chalearn/class.csv"
-    sVideoDir = "../datasets/04-chalearn"
-    sFrameDir = "06-i3d/data/frame"
-
-    sModelDir = "06-i3d/model"
-    sLogDir = "06-i3d/log"
-
-    #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
+    sClassFile       = "data-set/04-chalearn/class.csv"
+    #sVideoDir       = "data-set/04-chalearn"
+    sFrameDir        = "data-temp/04-chalearn/%03d/frame"%(nClasses)
+    #sFrameFeatureDir = "data-temp/04-chalearn/%03d/frame-i3d"%(nClasses)
+    sFlowDir         = "data-temp/04-chalearn/%03d/oflow"%(nClasses)
+    #sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d"%(nClasses)
+    sModelDir        = "model"
 
     NUM_FRAMES = 79
     FRAME_HEIGHT = 224
@@ -49,8 +51,8 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    LEARNING_RATE = 1e-1
-    EPOCHS = 1
+    LEARNING_RATE = 1e-3
+    EPOCHS = 100
     BATCHSIZE = 4
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
@@ -59,7 +61,7 @@ def main():
     oClasses = VideoClasses(sClassFile)
 
     # extract images
-    #videos2frames(sVideoDir, sFrameDir, nClasses = None)
+    #videosDir2framesDir(sVideoDir, sFrameDir, nClasses = None)
 
     # Load training data
     genFramesTrain = FramesGenerator(sFrameDir + "/train", BATCHSIZE, 
@@ -68,7 +70,7 @@ def main():
         NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS, oClasses.liClasses)
 
     # Load pretrained i3d model and adjust top layer 
-    print("Load pretrained I3D model ...")
+    print("Load pretrained I3D rgb model ...")
     keI3D_rgb = Inception_Inflated3d(
         include_top=False,
         weights='rgb_imagenet_and_kinetics',
@@ -83,17 +85,15 @@ def main():
     #keI3D_rgb.summary()    
         
     # Prep logging
-    os.makedirs(sLogDir, exist_ok=True)
-    sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
-        str(genFramesTrain.nSamples + genFramesVal.nSamples) + "in" + str(oClasses.nClasses)
+    sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
+        "-chalearn%03d-rgb-i3dtop.csv"%(nClasses)
     
     # Helper: Save results
-    csv_logger = keras.callbacks.CSVLogger(sLogDir + "/" + sLog + "-acc.csv")
+    csv_logger = keras.callbacks.CSVLogger(sLogPath.split(".")[0] + "-acc.csv")
 
     # Helper: Save the model
-    os.makedirs(sModelDir, exist_ok=True)
     checkpointer = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + sLog + "-best.h5",
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-best.h5",
         verbose = 1, save_best_only = True)
  
     # Fit!
@@ -102,16 +102,16 @@ def main():
         generator = genFramesTrain,
         validation_data = genFramesVal,
         epochs = EPOCHS,
-        workers = 4,                 
-        use_multiprocessing = True,
-        max_queue_size = 8, 
+        workers = 0, #4,                 
+        use_multiprocessing = False, #True,
+        #max_queue_size = 8, 
         verbose = 1,
         callbacks=[csv_logger, checkpointer]
     )    
     
     # save model
-    sModelSaved = sModelDir + "/" + sLog + "-last.h5"
-    keI3D_rgb.save(sModelSaved)
+    sModelSaved = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-last.h5"
+    keModel.save(sModelSaved)
 
     return
     

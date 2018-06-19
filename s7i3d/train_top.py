@@ -75,9 +75,6 @@ def main():
     #sFlowDir         = "data-temp/04-chalearn/%03d/oflow"%(nClasses)
     sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d"%(nClasses)
     sModelDir        = "model"
-    
- 
-    #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
 
     LEARNING_RATE = 1e-5
     EPOCHS = 100
