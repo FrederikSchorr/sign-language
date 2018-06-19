@@ -96,7 +96,7 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    BATCHSIZE = 32
+    BATCHSIZE = 16
 
     print("\nStarting ChaLearn optical flow to I3D features calculation in directory:", os.getcwd())
 
