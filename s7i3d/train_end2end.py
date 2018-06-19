@@ -111,7 +111,7 @@ def main():
     
     # save model
     sModelSaved = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-last.h5"
-    keModel.save(sModelSaved)
+    keI3D_rgb.save(sModelSaved)
 
     return
     
