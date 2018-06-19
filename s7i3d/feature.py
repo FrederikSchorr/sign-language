@@ -21,8 +21,9 @@ import keras
 
 sys.path.append(os.path.abspath("."))
 from s7i3d.preprocess import videosDir2framesDir
-from s7i3d.datagenerator import VideoClasses, FramesGenerator
+from s7i3d.datagenerator import VideoClasses, FramesGenerator, get_size
 from s7i3d.i3d_inception import Inception_Inflated3d
+
 
 
 def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Model, nBatchSize:int, oClasses:VideoClasses):
@@ -36,7 +37,7 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
     _, nFrames, h, w, c = keI3D.input_shape
     genFrames = FramesGenerator(sFrameBaseDir, nBatchSize, nFrames, h, w, c, oClasses.liClasses, bShuffle=False)
     
-    # Predict
+    """# Predict
     print("Predict I3D features with generator ...")
     arPredictions = keI3D.predict_generator(
         generator = genFrames,
@@ -44,21 +45,33 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
         use_multiprocessing = False, #True,
         #max_queue_size = 8, 
         verbose = 1)   
-    print("I3D features: shape %s | size %d" % (str(arPredictions.shape), sys.getsizeof(arPredictions)))    
+    print("I3D features: shape %s | size %d" % (str(arPredictions.shape), get_size(arPredictions)))    
 
     nPredictions = arPredictions.shape[0]
-    if  nPredictions > genFrames.nSamples: raise ValueError("Unexpected output shape")
+    if  nPredictions > genFrames.nSamples: raise ValueError("Unexpected output shape")"""
 
-    # write features to files
-    for i in range(nPredictions):
+    print("Predict I3D features 1-by-1 ...")   
+    # loop through all samples
+    for i in range(genFrames.nSamples):
+
+        # get frames
+        seVideo = genFrames.dfVideos.iloc[i, :]
+        arFrames, _ = genFrames.data_generation(seVideo)
+
+        # predict
+        arX = np.expand_dims(arFrames, axis=0)
+        arPrediction = keI3D.predict(arX, verbose=1)
+        arFeature = arPrediction[0]
+        print(arFrames.shape, arX.shape, arPrediction.shape, arFeature.shape)
+
         # ... sFrameBaseDir / class / videoname=frame-directory
-        sFrameDir = genFrames.dfVideos.sFrameDir[i]
-        sVideoName = sFrameDir.split("/")[-1]
-        sLabel = genFrames.dfVideos.sLabel[i]
+        #sFrameDir = genFrames.dfVideos.sFrameDir[i]
+        sVideoName = seVideo.sFrameDir.split("/")[-1]
+        sLabel = seVideo.sLabel
 
         # save to file
-        arFeature = arPredictions[i, ...]
-        #print("arFeature shape %s | type %s | size %d"%(arFeature.shape, type(arFeature[0,0,0,0]), sys.getsizeof(arFeature)))
+        """arFeature = arPredictions[i, ...]
+        print("arFeature shape %s | type %s | size %d"%(arFeature.shape, type(arFeature[0,0,0,0]), get_size(arFeature)))"""
         os.makedirs(sFeatureBaseDir + "/" + sLabel, exist_ok = True)
         np.save(sFeatureBaseDir + "/" + sLabel + "/" + sVideoName + ".npy", arFeature)
 
@@ -101,7 +114,7 @@ def main():
         include_top=False,
         weights='rgb_imagenet_and_kinetics',
         input_shape=(NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS))
-    keI3D_rgb.summary() 
+    #keI3D_rgb.summary() 
 
     # calculate features from rgb frames
     framesDir2featuresDir(sFrameDir + "/val", sFrameFeatureDir + "/val", keI3D_rgb, BATCHSIZE, oClasses)

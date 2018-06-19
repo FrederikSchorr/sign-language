@@ -76,7 +76,7 @@ def main():
     sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d"%(nClasses)
     sModelDir        = "model"
 
-    LEARNING_RATE = 1e-5
+    LEARNING_RATE = 1e-3
     EPOCHS = 100
     BATCHSIZE = 16
 
@@ -91,6 +91,7 @@ def main():
         "-chalearn%03d-rgb-i3dtop.csv"%(nClasses)
 
     keI3D_top_rgb = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
+    keI3D_top_rgb.summary()
     train_i3d_top(sFrameFeatureDir, sModelDir, sLogPath, keI3D_top_rgb, oClasses,
         BATCHSIZE, EPOCHS, LEARNING_RATE)
 
