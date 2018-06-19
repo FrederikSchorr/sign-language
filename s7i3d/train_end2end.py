@@ -82,11 +82,11 @@ def main():
     # Use same optimizer as in https://github.com/deepmind/kinetics-i3d
     optimizer = keras.optimizers.SGD(lr = LEARNING_RATE, momentum = 0.9, decay = 1e-7)
     keI3D_rgb.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    #keI3D_rgb.summary()    
+    keI3D_rgb.summary()    
         
     # Prep logging
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
-        "-chalearn%03d-rgb-i3dtop.csv"%(nClasses)
+        "-chalearn%03d-rgb-i3d-finetune.csv"%(nClasses)
     
     # Helper: Save results
     csv_logger = keras.callbacks.CSVLogger(sLogPath.split(".")[0] + "-acc.csv")

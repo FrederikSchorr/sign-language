@@ -107,7 +107,7 @@ def main():
     framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_rgb, BATCHSIZE, oClasses)
 
 
-    # Load pretrained i3d flow model without top layer 
+    """# Load pretrained i3d flow model without top layer 
     print("Load pretrained I3D flow model ...")
     keI3D_flow = Inception_Inflated3d(
         include_top=False,
@@ -118,7 +118,8 @@ def main():
     # calculate features from optical flow
     framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, BATCHSIZE, oClasses)
     framesDir2featuresDir(sFlowDir + "/train", sFlowFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
-
+    """
+    
     return
     
     

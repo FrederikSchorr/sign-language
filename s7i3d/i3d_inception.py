@@ -582,7 +582,7 @@ def Inception_Inflated3d(include_top=True,
 
 def Inception_Inflated3d_Top(classes:int, dropout_prob:bool) -> Model:
 
-    inputs = Input(shape = (9, 1, 1, 1024), name = "Input")
+    inputs = Input(shape = (9, 1, 1, 1024), name = "input")
     x = Dropout(dropout_prob)(inputs)
 
     x = conv3d_bn(x, classes, 1, 1, 1, padding='same', 
@@ -599,14 +599,21 @@ def Inception_Inflated3d_Top(classes:int, dropout_prob:bool) -> Model:
     x = Activation('softmax', name='prediction')(x)
 
     #create graph of new model
-    keModel = Model(inputs = inputs, outputs = x)
+    keModel = Model(inputs = inputs, outputs = x, name = "i3d_top")
 
     return keModel
 
 
 def add_i3d_top(base_model:Model, classes:int, dropout_prob:bool) -> Model:
 
+    top_model = Inception_Inflated3d_Top(classes, dropout_prob)
+
     x = base_model.output
+    predictions = top_model(x)
+
+    new_model = Model(inputs = base_model.input, output = predictions, name = "i3d_with_top")
+
+    """x = base_model.output
     x = Dropout(dropout_prob)(x)
 
     x = conv3d_bn(x, classes, 1, 1, 1, padding='same', 
@@ -623,6 +630,6 @@ def add_i3d_top(base_model:Model, classes:int, dropout_prob:bool) -> Model:
     x = Activation('softmax', name='prediction')(x)
 
     #create graph of new model
-    new_model = Model(inputs = base_model.input, outputs = x)
+    new_model = Model(inputs = base_model.input, outputs = x)"""
 
     return new_model
