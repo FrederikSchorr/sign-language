@@ -102,9 +102,9 @@ def main():
         generator = genFramesTrain,
         validation_data = genFramesVal,
         epochs = EPOCHS,
-        workers = 0, #4,                 
-        use_multiprocessing = False, #True,
-        #max_queue_size = 8, 
+        workers = 4,                 
+        use_multiprocessing = True,
+        max_queue_size = 8, 
         verbose = 1,
         callbacks=[csv_logger, checkpointer]
     )    
