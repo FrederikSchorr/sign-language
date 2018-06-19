@@ -22,7 +22,7 @@ import keras
 sys.path.append(os.path.abspath("."))
 from s7i3d.preprocess import videosDir2framesDir
 from s7i3d.datagenerator import VideoClasses, FramesGenerator
-from s7i3d.i3d_inception import Inception_Inflated3d, add_top_layer
+from s7i3d.i3d_inception import Inception_Inflated3d
 
 
 def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Model, nBatchSize:int, oClasses:VideoClasses):
@@ -34,17 +34,17 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
 
     # prepare frame generator
     _, nFrames, h, w, c = keI3D.input_shape
-    genFrames = FramesGenerator(sFrameBaseDir, nBatchSize, nFrames, h, w, c, oClasses.liClasses)
+    genFrames = FramesGenerator(sFrameBaseDir, nBatchSize, nFrames, h, w, c, oClasses.liClasses, bShuffle=False)
     
     # Predict
     print("Predict I3D features with generator ...")
     arPredictions = keI3D.predict_generator(
         generator = genFrames,
-        workers = 4,                 
-        use_multiprocessing = True,
-        max_queue_size = 8, 
+        workers = 0, #4,                 
+        use_multiprocessing = False, #True,
+        #max_queue_size = 8, 
         verbose = 1)   
-    print("I3D features shape: %s" % (str(arPredictions.shape)))    
+    print("I3D features: shape %s | size %d" % (str(arPredictions.shape), sys.getsizeof(arPredictions)))    
 
     nPredictions = arPredictions.shape[0]
     if  nPredictions > genFrames.nSamples: raise ValueError("Unexpected output shape")
@@ -58,6 +58,7 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
 
         # save to file
         arFeature = arPredictions[i, ...]
+        #print("arFeature shape %s | type %s | size %d"%(arFeature.shape, type(arFeature[0,0,0,0]), sys.getsizeof(arFeature)))
         os.makedirs(sFeatureBaseDir + "/" + sLabel, exist_ok = True)
         np.save(sFeatureBaseDir + "/" + sLabel + "/" + sVideoName + ".npy", arFeature)
 
@@ -83,7 +84,7 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    BATCHSIZE = 4
+    BATCHSIZE = 1
 
     print("\nStarting ChaLearn optical flow to I3D features calculation in directory:", os.getcwd())
 
@@ -100,7 +101,7 @@ def main():
         include_top=False,
         weights='rgb_imagenet_and_kinetics',
         input_shape=(NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS))
-    #keI3D_rgb.summary() 
+    keI3D_rgb.summary() 
 
     # calculate features from rgb frames
     framesDir2featuresDir(sFrameDir + "/val", sFrameFeatureDir + "/val", keI3D_rgb, BATCHSIZE, oClasses)
@@ -119,7 +120,7 @@ def main():
     framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, BATCHSIZE, oClasses)
     framesDir2featuresDir(sFlowDir + "/train", sFlowFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
     """
-    
+
     return
     
     

@@ -69,6 +69,13 @@ class FramesGenerator(keras.utils.Sequence):
         'Denotes the number of batches per epoch'
         return int(np.floor(self.nSamples / self.nBatchSize))
 
+    def on_epoch_end(self):
+        'Updates indexes after each epoch'
+        self.indexes = np.arange(self.nSamples)
+        if self.bShuffle == True:
+            np.random.shuffle(self.indexes)
+
+
     def __getitem__(self, nStep):
         'Generate one batch of data'
 
@@ -92,11 +99,6 @@ class FramesGenerator(keras.utils.Sequence):
         # onehot the labels
         return arX, keras.utils.to_categorical(arY, num_classes=self.nClasses)
 
-    def on_epoch_end(self):
-        'Updates indexes after each epoch'
-        self.indexes = np.arange(self.nSamples)
-        if self.bShuffle == True:
-            np.random.shuffle(self.indexes)
 
     def __data_generation(self, seVideo:pd.Series) -> (np.array(float), int):
         'Generates data for 1 sample' 
