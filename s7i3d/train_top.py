@@ -79,7 +79,7 @@ def main():
  
     #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
 
-    LEARNING_RATE = 1e-3
+    LEARNING_RATE = 1e-5
     EPOCHS = 100
     BATCHSIZE = 16
 
@@ -98,13 +98,13 @@ def main():
         BATCHSIZE, EPOCHS, LEARNING_RATE)
 
     # FLOW: Load empty i3d top layer and train it
-    """print("Load new I3D flow top model ...")
+    print("Load new I3D flow top model ...")
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
         "-chalearn%03d-oflow-i3dtop.csv"%(nClasses)
 
     keI3D_top_flow = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
     train_i3d_top(sFlowFeatureDir, sModelDir, sLogPath, keI3D_top_flow, oClasses,
-        BATCHSIZE, EPOCHS, LEARNING_RATE) """           
+        BATCHSIZE, EPOCHS, LEARNING_RATE)           
 
     return
     
