@@ -70,14 +70,12 @@ def main():
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
     #sVideoDir       = "data-set/04-chalearn"
-    sFrameDir        = "data-temp/04-chalearn/%03d/frame"%(nClasses)
+    #sFrameDir        = "data-temp/04-chalearn/%03d/frame"%(nClasses)
     sFrameFeatureDir = "data-temp/04-chalearn/%03d/frame-i3d"%(nClasses)
-    sFlowDir         = "data-temp/04-chalearn/%03d/oflow"%(nClasses)
+    #sFlowDir         = "data-temp/04-chalearn/%03d/oflow"%(nClasses)
     sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d"%(nClasses)
-
-    sModelDir       = "model"
-    sLogPath        = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
-        "-chalearn%03d-oflow-i3dtop.csv"%(nClasses)
+    sModelDir        = "model"
+    
  
     #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
 
@@ -90,11 +88,23 @@ def main():
     # read the ChaLearn classes
     oClasses = VideoClasses(sClassFile)
 
-    # Load empty i3d top layer and train it
-    print("Load new I3D flow top model ...")
+    # RGB: Load empty i3d top layer and train it
+    print("Load new I3D rgb top model ...")
+    sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
+        "-chalearn%03d-rgb-i3dtop.csv"%(nClasses)
+
+    keI3D_top_rgb = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
+    train_i3d_top(sFrameFeatureDir, sModelDir, sLogPath, keI3D_top_rgb, oClasses,
+        BATCHSIZE, EPOCHS, LEARNING_RATE)
+
+    # FLOW: Load empty i3d top layer and train it
+    """print("Load new I3D flow top model ...")
+    sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
+        "-chalearn%03d-oflow-i3dtop.csv"%(nClasses)
+
     keI3D_top_flow = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
     train_i3d_top(sFlowFeatureDir, sModelDir, sLogPath, keI3D_top_flow, oClasses,
-        BATCHSIZE, EPOCHS, LEARNING_RATE)        
+        BATCHSIZE, EPOCHS, LEARNING_RATE) """           
 
     return
     
