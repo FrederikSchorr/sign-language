@@ -26,7 +26,7 @@ from s7i3d.i3d_inception import Inception_Inflated3d
 
 
 
-def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Model, nBatchSize:int, oClasses:VideoClasses):
+def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Model, oClasses:VideoClasses):
 
     # do not (partially) overwrite existing feature directory
     if os.path.exists(sFeatureBaseDir): 
@@ -35,45 +35,28 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
 
     # prepare frame generator
     _, nFrames, h, w, c = keI3D.input_shape
-    genFrames = FramesGenerator(sFrameBaseDir, nBatchSize, nFrames, h, w, c, oClasses.liClasses, bShuffle=False)
+    genFrames = FramesGenerator(sFrameBaseDir, 1, nFrames, h, w, c, oClasses.liClasses, bShuffle=False)
     
-    """# Predict
-    print("Predict I3D features with generator ...")
-    arPredictions = keI3D.predict_generator(
-        generator = genFrames,
-        workers = 0, #4,                 
-        use_multiprocessing = False, #True,
-        #max_queue_size = 8, 
-        verbose = 1)   
-    print("I3D features: shape %s | size %d" % (str(arPredictions.shape), get_size(arPredictions)))    
-
-    nPredictions = arPredictions.shape[0]
-    if  nPredictions > genFrames.nSamples: raise ValueError("Unexpected output shape")"""
-
     print("Predict I3D features 1-by-1 ...")   
     # loop through all samples
     for i in range(genFrames.nSamples):
-
-        # get frames
         seVideo = genFrames.dfVideos.iloc[i, :]
-        arFrames, _ = genFrames.data_generation(seVideo)
-
-        # predict
-        arX = np.expand_dims(arFrames, axis=0)
-        arPrediction = keI3D.predict(arX, verbose=1)
-        arFeature = arPrediction[0]
-        print(arFrames.shape, arX.shape, arPrediction.shape, arFeature.shape)
 
         # ... sFrameBaseDir / class / videoname=frame-directory
-        #sFrameDir = genFrames.dfVideos.sFrameDir[i]
         sVideoName = seVideo.sFrameDir.split("/")[-1]
         sLabel = seVideo.sLabel
+        sFeaturePath = sFeatureBaseDir + "/" + sLabel + "/" + sVideoName + ".npy"
+
+        # get frames
+        arFrames, _ = genFrames.data_generation(seVideo)
+
+        # predict single sample
+        print("%5d calculate I3D feature to %s" % (i, sFeaturePath))
+        arFeature = keI3D.predict(np.expand_dims(arFrames, axis=0))[0]
 
         # save to file
-        """arFeature = arPredictions[i, ...]
-        print("arFeature shape %s | type %s | size %d"%(arFeature.shape, type(arFeature[0,0,0,0]), get_size(arFeature)))"""
         os.makedirs(sFeatureBaseDir + "/" + sLabel, exist_ok = True)
-        np.save(sFeatureBaseDir + "/" + sLabel + "/" + sVideoName + ".npy", arFeature)
+        np.save(sFeaturePath, arFeature)
 
     print("%d I3D features saved to files in %s" % (i+1, sFeatureBaseDir))
     return
@@ -97,7 +80,7 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    BATCHSIZE = 1
+    #BATCHSIZE = 16
 
     print("\nStarting ChaLearn optical flow to I3D features calculation in directory:", os.getcwd())
 
@@ -117,11 +100,11 @@ def main():
     #keI3D_rgb.summary() 
 
     # calculate features from rgb frames
-    framesDir2featuresDir(sFrameDir + "/val", sFrameFeatureDir + "/val", keI3D_rgb, BATCHSIZE, oClasses)
-    framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_rgb, BATCHSIZE, oClasses)
+    framesDir2featuresDir(sFrameDir + "/val", sFrameFeatureDir + "/val", keI3D_rgb, oClasses)
+    framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_rgb, oClasses)
 
 
-    """# Load pretrained i3d flow model without top layer 
+    # Load pretrained i3d flow model without top layer 
     print("Load pretrained I3D flow model ...")
     keI3D_flow = Inception_Inflated3d(
         include_top=False,
@@ -130,9 +113,8 @@ def main():
     #keI3D_flow.summary() 
 
     # calculate features from optical flow
-    framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, BATCHSIZE, oClasses)
-    framesDir2featuresDir(sFlowDir + "/train", sFlowFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
-    """
+    framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, oClasses)
+    framesDir2featuresDir(sFlowDir + "/train", sFlowFeatureDir + "/train", keI3D_flow, oClasses)
 
     return
     
