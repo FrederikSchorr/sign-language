@@ -41,7 +41,7 @@ def predict_i3d_top(sFeatureDir:str, sModelPath:str, nBatchSize:int, oClasses:Vi
 
     # Load video features
     genFeatures = FeaturesGenerator(sFeatureDir, nBatchSize,
-        keModel.input_shape[1:], oClasses.liClasses)
+        keModel.input_shape[1:], oClasses.liClasses, bShuffle = False)
     if genFeatures.nSamples == 0: raise ValueError("No feature files detected, prediction stopped")
 
     # predict
@@ -63,7 +63,7 @@ def predict_i3d_top(sFeatureDir:str, sModelPath:str, nBatchSize:int, oClasses:Vi
 def main():
    
     nClasses = 3
-    nBatchSize = 4
+    nBatchSize = 16
 
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
