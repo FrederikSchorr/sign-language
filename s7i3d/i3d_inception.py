@@ -580,7 +580,31 @@ def Inception_Inflated3d(include_top=True,
     return model
 
 
-def add_top_layer(base_model:Model, classes:int, dropout_prob:bool) -> Model:
+def Inception_Inflated3d_Top(classes:int, dropout_prob:bool) -> Model:
+
+    inputs = Input(shape = (9, 1, 1, 1024), name = "Input")
+    x = Dropout(dropout_prob)(inputs)
+
+    x = conv3d_bn(x, classes, 1, 1, 1, padding='same', 
+            use_bias=True, use_activation_fn=False, use_bn=False, name='Conv3d_6a_1x1')
+
+    num_frames_remaining = int(x.shape[1])
+    x = Reshape((num_frames_remaining, classes))(x)
+
+    # logits (raw scores for each class)
+    x = Lambda(lambda x: K.mean(x, axis=1, keepdims=False),
+                output_shape=lambda s: (s[0], s[2]))(x)
+
+    # final softmax
+    x = Activation('softmax', name='prediction')(x)
+
+    #create graph of new model
+    keModel = Model(inputs = inputs, outputs = x)
+
+    return keModel
+
+
+def add_i3d_top(base_model:Model, classes:int, dropout_prob:bool) -> Model:
 
     x = base_model.output
     x = Dropout(dropout_prob)(x)
@@ -598,7 +622,7 @@ def add_top_layer(base_model:Model, classes:int, dropout_prob:bool) -> Model:
     # final softmax
     x = Activation('softmax', name='prediction')(x)
 
-    #create graph of your new model
+    #create graph of new model
     new_model = Model(inputs = base_model.input, outputs = x)
 
     return new_model

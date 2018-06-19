@@ -119,6 +119,100 @@ class FramesGenerator(keras.utils.Sequence):
         return ar_fFrames, seVideo.nLabel
 
 
+class FeaturesGenerator(keras.utils.Sequence):
+    """Reads and yields I3D features for Keras.model.fit_generator
+    """
+
+
+    def __init__(self, sPath:str, nBatchSize:int, tuXshape, \
+        liClassesFull:list = None, bShuffle:bool = True):
+        """
+        Assume directory structure:
+        ... / sPath / class / feature.npy
+        """
+
+        'Initialization'
+        self.nBatchSize = nBatchSize
+        self.tuXshape = tuXshape
+        self.bShuffle = bShuffle
+
+        # retrieve all feature files
+        self.dfSamples = pd.DataFrame(glob.glob(sPath + "/*/*.npy"), columns=["sPath"])
+        self.nSamples = len(self.dfSamples)
+        if self.nSamples == 0: raise ValueError("Found no feature files in " + sPath)
+        print("Detected %d samples in %s ..." % (self.nSamples, sPath))
+
+        # test shape of first sample
+        arX = np.load(self.dfSamples.sPath[0])
+        if arX.shape != tuXshape: raise ValueError("Wrong feature shape: " + str(arX.shape) + str(tuXshape))
+
+        # extract (text) labels from path
+        seLabels =  self.dfSamples.sPath.apply(lambda s: s.split("/")[-2])
+        self.dfSamples.loc[:, "sLabel"] = seLabels
+            
+        # extract unique classes from all detected labels
+        self.liClasses = sorted(list(self.dfSamples.sLabel.unique()))
+
+        # if classes are provided upfront
+        if liClassesFull != None:
+            liClassesFull = sorted(np.unique(liClassesFull))
+            # check detected vs provided classes
+            if set(self.liClasses).issubset(set(liClassesFull)) == False:
+                raise ValueError("Detected classes are NOT subset of provided classes")
+            # use superset of provided classes
+            self.liClasses = liClassesFull
+            
+        self.nClasses = len(self.liClasses)
+
+        # encode labels
+        trLabelEncoder = LabelEncoder()
+        trLabelEncoder.fit(self.liClasses)
+        self.dfSamples.loc[:, "nLabel"] = trLabelEncoder.transform(self.dfSamples.sLabel)
+        
+        self.on_epoch_end()
+        return
+
+    def __len__(self):
+        'Denotes the number of batches per epoch'
+        return int(np.floor(self.nSamples / self.nBatchSize))
+
+    def on_epoch_end(self):
+        'Updates indexes after each epoch'
+        self.indexes = np.arange(self.nSamples)
+        if self.bShuffle == True:
+            np.random.shuffle(self.indexes)
+
+    def __getitem__(self, nStep):
+        'Generate one batch of data'
+
+        # Generate indexes of the batch
+        indexes = self.indexes[nStep*self.nBatchSize:(nStep+1)*self.nBatchSize]
+
+        # Find selected samples
+        dfSamplesBatch = self.dfSamples.loc[indexes, :]
+        nBatchSize = len(dfSamplesBatch)
+
+        # initialize arrays
+        arX = np.empty((nBatchSize, ) + self.tuXshape, dtype = float)
+        arY = np.empty((nBatchSize), dtype = int)
+
+        # Generate data
+        for i in range(nBatchSize):
+            # generate single sample data
+            arX[i,], arY[i] = self.__data_generation(dfSamplesBatch.iloc[i,:])
+
+        # onehot the labels
+        return arX, keras.utils.to_categorical(arY, num_classes=self.nClasses)
+
+    def __data_generation(self, seSample:pd.Series) -> (np.array(float), int):
+        'Generates data for 1 sample' 
+
+        arX = np.load(seSample.sPath)
+
+        return arX, seSample.nLabel
+
+
+
 class VideoClasses():
 
     def __init__(self, sClassFile:str):

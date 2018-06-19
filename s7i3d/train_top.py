@@ -19,20 +19,47 @@ import pandas as pd
 import keras
 
 sys.path.append(os.path.abspath("."))
-from s7i3d.preprocess import videos2frames
-from s7i3d.datagenerator import VideoClasses, FramesGenerator
-from s7i3d.i3d_inception import Inception_Inflated3d, add_top_layer
+from s7i3d.datagenerator import VideoClasses, FramesGenerator, FeaturesGenerator
+from s7i3d.i3d_inception import Inception_Inflated3d, Inception_Inflated3d_Top
 
 
-def layers_freeze(keModel:keras.Model) -> keras.Model:
-    print("Freeze all layers ...")
-    for layer in keModel.layers:
-        layer.trainable = False
+def train_i3d_top(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.Model, oClasses: VideoClasses,
+    nBatchSize:int=16, nEpoch:int=100, fLearn:float=1e-4):
 
-    return keModel
+    # Load training data
+    genFeaturesVal   = FeaturesGenerator(sFeatureDir + "/val", nBatchSize,
+        keModel.input_shape[1:], oClasses.liClasses)
+    genFeaturesTrain = FeaturesGenerator(sFeatureDir + "/train", nBatchSize, 
+        keModel.input_shape[1:], oClasses.liClasses)
 
+    # Helper: Save results
+    csv_logger = keras.callbacks.CSVLogger(sLogPath.split(".")[0] + "-acc.csv")
 
-def train():
+    # Helper: Save the model
+    os.makedirs(sModelDir, exist_ok=True)
+    checkpointer = keras.callbacks.ModelCheckpoint(
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-best.h5",
+        verbose = 1, save_best_only = True)
+
+    # Use same optimizer as in https://github.com/deepmind/kinetics-i3d
+    optimizer = keras.optimizers.SGD(lr = fLearn, momentum = 0.9, decay = 1e-7)
+    keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+
+    # Fit!
+    print("Fit with generator, learning rate %f ..." % fLearn)
+    keModel.fit_generator(
+        generator = genFeaturesTrain,
+        validation_data = genFeaturesVal,
+        epochs = nEpoch,
+        workers = 0, #4,                 
+        use_multiprocessing = False, #True,
+        #max_queue_size = 8, 
+        verbose = 1,
+        callbacks=[csv_logger, checkpointer])    
+    
+    # save model
+    sModelSaved = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-last.h5"
+    keModel.save(sModelSaved)
 
     return
 
@@ -43,10 +70,10 @@ def main():
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
     #sVideoDir       = "data-set/04-chalearn"
-    sFrameDir        = "data-temp/04-chalearn/%03d-frame"%(nClasses)
-    sFrameFeatureDir = "data-temp/04-chalearn/%03d-frame-i3d"%(nClasses)
-    sFlowDir         = "data-temp/04-chalearn/%03d-oflow"%(nClasses)
-    sFlowFeatureDir  = "data-temp/04-chalearn/%03d-oflow-i3d"%(nClasses)
+    sFrameDir        = "data-temp/04-chalearn/%03d/frame"%(nClasses)
+    sFrameFeatureDir = "data-temp/04-chalearn/%03d/frame-i3d"%(nClasses)
+    sFlowDir         = "data-temp/04-chalearn/%03d/oflow"%(nClasses)
+    sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d"%(nClasses)
 
     sModelDir       = "model"
     sLogPath        = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
@@ -54,75 +81,20 @@ def main():
  
     #sModelSaved = sModelDir + "/20180612-0740-lstm-13in249-last.h5"
 
-    NUM_FRAMES = 79
-    FRAME_HEIGHT = 224
-    FRAME_WIDTH = 224
-    NUM_RGB_CHANNELS = 3
-    NUM_FLOW_CHANNELS = 2
-
-    LEARNING_RATE = 1e-1
-    EPOCHS = 1
-    BATCHSIZE = 4
+    LEARNING_RATE = 1e-3
+    EPOCHS = 100
+    BATCHSIZE = 16
 
     print("\nStarting ChaLearn training in directory:", os.getcwd())
 
     # read the ChaLearn classes
     oClasses = VideoClasses(sClassFile)
 
-    # extract images
-    #videos2frames(sVideoDir, sFrameDir, nClasses = None)
-
-    # Load training data
-    genFramesTrain = FramesGenerator(sFrameDir + "/train", BATCHSIZE, 
-        NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS, oClasses.liClasses)
-    genFramesVal = FramesGenerator(sFrameDir + "/val", BATCHSIZE,
-        NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS, oClasses.liClasses)
-
-    # Load pretrained i3d model and adjust top layer 
-    print("Load pretrained I3D model ...")
-    keI3D_rgb = Inception_Inflated3d(
-        include_top=False,
-        weights='rgb_imagenet_and_kinetics',
-        input_shape=(NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS))
-    print("Add top layers with %d output classes ..." % oClasses.nClasses)
-    keI3D_rgb = layers_freeze(keI3D_rgb)
-    keI3D_rgb = add_top_layer(keI3D_rgb, oClasses.nClasses, dropout_prob=0.5)
-
-    # Use same optimizer as in https://github.com/deepmind/kinetics-i3d
-    optimizer = keras.optimizers.SGD(lr = LEARNING_RATE, momentum = 0.9, decay = 1e-7)
-    keI3D_rgb.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    #keI3D_rgb.summary()    
-        
-    # Prep logging
-    os.makedirs(sLogDir, exist_ok=True)
-    sLog = time.strftime("%Y%m%d-%H%M") + "-lstm-" + \
-        str(genFramesTrain.nSamples + genFramesVal.nSamples) + "in" + str(oClasses.nClasses)
-    
-    # Helper: Save results
-    csv_logger = keras.callbacks.CSVLogger(sLogDir + "/" + sLog + "-acc.csv")
-
-    # Helper: Save the model
-    os.makedirs(sModelDir, exist_ok=True)
-    checkpointer = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + sLog + "-best.h5",
-        verbose = 1, save_best_only = True)
- 
-    # Fit!
-    print("Fit with generator, learning rate %f ..." % LEARNING_RATE)
-    keI3D_rgb.fit_generator(
-        generator = genFramesTrain,
-        validation_data = genFramesVal,
-        epochs = EPOCHS,
-        workers = 4,                 
-        use_multiprocessing = True,
-        max_queue_size = 8, 
-        verbose = 1,
-        callbacks=[csv_logger, checkpointer]
-    )    
-    
-    # save model
-    sModelSaved = sModelDir + "/" + sLog + "-last.h5"
-    keI3D_rgb.save(sModelSaved)
+    # Load empty i3d top layer and train it
+    print("Load new I3D flow top model ...")
+    keI3D_top_flow = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
+    train_i3d_top(sFlowFeatureDir, sModelDir, sLogPath, keI3D_top_flow, oClasses,
+        BATCHSIZE, EPOCHS, LEARNING_RATE)        
 
     return
     

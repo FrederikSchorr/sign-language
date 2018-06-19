@@ -20,7 +20,7 @@ import keras
 sys.path.append(os.path.abspath("."))
 from s7i3d.preprocess import videos2frames
 from s7i3d.datagenerator import VideoClasses, FramesGenerator
-from s7i3d.i3d_inception import Inception_Inflated3d, add_top_layer
+from s7i3d.i3d_inception import Inception_Inflated3d, add_i3d_top
 
 
 def layers_freeze(keModel:keras.Model) -> keras.Model:
@@ -75,7 +75,7 @@ def main():
         input_shape=(NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH, NUM_RGB_CHANNELS))
     print("Add top layers with %d output classes ..." % oClasses.nClasses)
     keI3D_rgb = layers_freeze(keI3D_rgb)
-    keI3D_rgb = add_top_layer(keI3D_rgb, oClasses.nClasses, dropout_prob=0.5)
+    keI3D_rgb = add_i3d_top(keI3D_rgb, oClasses.nClasses, dropout_prob=0.5)
 
     # Use same optimizer as in https://github.com/deepmind/kinetics-i3d
     optimizer = keras.optimizers.SGD(lr = LEARNING_RATE, momentum = 0.9, decay = 1e-7)
