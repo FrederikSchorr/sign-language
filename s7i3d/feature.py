@@ -103,7 +103,7 @@ def main():
 
     # calculate features from optical flow
     framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, BATCHSIZE, oClasses)
-    framesDir2featuresDir(sFrameDir + "/train", sFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
+    framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
 
     return
     
