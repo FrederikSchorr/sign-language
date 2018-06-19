@@ -98,7 +98,7 @@ def main():
 
     BATCHSIZE = 16
 
-    print("\nStarting ChaLearn optical flow to I3D features calculation in directory:", os.getcwd())
+    print("\nStarting calculation of I3D features on ChaLearn data ... \n%s" %(os.getcwd()))
 
     # extract images
     #videosDir2framesDir(sVideoDir, sFrameDir, nClasses)

@@ -74,8 +74,8 @@ def main():
     sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d/val"%(nClasses)
 
     sModelDir       = "model"
-    sModelRGB       = sModelDir + "/20180619-1524-chalearn003-rgb-i3dtop-last.h5"
-    sModelFlow      = sModelDir + "/20180619-1550-chalearn003-oflow-i3dtop-last.h5"
+    sModelRGB       = sModelDir + "/20180619-1524-chalearn003-rgb-i3dtop-best.h5"
+    sModelFlow      = sModelDir + "/20180619-1550-chalearn003-oflow-i3dtop-best.h5"
 
     print("\nPredict with combined rgb + flow I3D top models. ", os.getcwd())
     

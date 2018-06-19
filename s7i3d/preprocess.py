@@ -15,6 +15,8 @@ import pandas as pd
 
 sys.path.append(os.path.abspath("."))
 from s7i3d.video2frame import video2frames, frames2file
+from s6opticalflow.preprocess import framesDir2flowsDir
+
 
 def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
     """ Extract frames from videos 
@@ -66,15 +68,22 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
 
 def main():
 
-    nClasses = 3
+    nClasses = 249 # number of classes
 
-    sVideoDir = "../datasets/04-chalearn"
-    sFrameDir = "06-i3d/data/frame"
-    #sFlowDir =  "06-3id/data/opticalflow"
+    # directories
+    sClassFile       = "data-set/04-chalearn/class.csv"
+    sVideoDir        = "data-set/04-chalearn"
+    sFrameDir        = "data-temp/04-chalearn/%03d/frame"%(nClasses)
+    sFlowDir         = "data-temp/04-chalearn/%03d/oflow"%(nClasses)
+
 
     print("Extracting ChaLearn frames and optical flow ...")
     
+    # extract frames from videos
     videosDir2framesDir(sVideoDir, sFrameDir)
+
+    # calculate optical flow
+    framesDir2flowsDir(sFrameDir, sFlowDir)
 
     return
 

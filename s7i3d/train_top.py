@@ -80,7 +80,7 @@ def main():
     EPOCHS = 50
     BATCHSIZE = 16
 
-    print("\nStarting ChaLearn training in directory:", os.getcwd())
+    print("\nStarting I3D top training on ChaLearn data ... \n%s" %(os.getcwd()))
 
     # read the ChaLearn classes
     oClasses = VideoClasses(sClassFile)
@@ -108,4 +108,8 @@ def main():
     
     
 if __name__ == '__main__':
+    # generate features
+    import s7i3d.feature
+    s7i3d.feature.main()
+    # train 
     main()
