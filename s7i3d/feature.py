@@ -26,20 +26,36 @@ from s7i3d.i3d_inception import Inception_Inflated3d
 
 
 
-def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Model, oClasses:VideoClasses):
+def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, 
+    keI3D:keras.Model, nBatchSize:int, oClasses:VideoClasses):
 
     # do not (partially) overwrite existing feature directory
     if os.path.exists(sFeatureBaseDir): 
         warnings.warn("\nFeature folder " + sFeatureBaseDir + " alredy exists, calculation stopped") 
         return
 
-    # prepare frame generator
+    # prepare frame generator - without shuffling!
     _, nFrames, h, w, c = keI3D.input_shape
-    genFrames = FramesGenerator(sFrameBaseDir, 1, nFrames, h, w, c, oClasses.liClasses, bShuffle=False)
-    
-    print("Predict I3D features 1-by-1 ...")   
+    genFrames = FramesGenerator(sFrameBaseDir, nBatchSize, nFrames, h, w, c, 
+        oClasses.liClasses, bShuffle=False)
+
+    # Predict
+    print("Predict I3D features with generator ... ")
+    arPredictions = keI3D.predict_generator(
+        generator = genFrames,
+        workers = 0, #4,                 
+        use_multiprocessing = False, #True,
+        #max_queue_size = 8, 
+        verbose = 1)   
+    print("I3D features shape %s" % (str(arPredictions.shape)))
+
+    nPredictions = arPredictions.shape[0] 
+    if nPredictions != genFrames.nSamples: raise ValueError("Unexpected number of predictions")
+
+    #print("Predict I3D features 1-by-1 ...")  
     # loop through all samples
-    for i in range(genFrames.nSamples):
+    for i in range(nPredictions):
+        arFeature = arPredictions[i, ...]
         seVideo = genFrames.dfVideos.iloc[i, :]
 
         # ... sFrameBaseDir / class / videoname=frame-directory
@@ -47,12 +63,12 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
         sLabel = seVideo.sLabel
         sFeaturePath = sFeatureBaseDir + "/" + sLabel + "/" + sVideoName + ".npy"
 
-        # get frames
+        """# get frames
         arFrames, _ = genFrames.data_generation(seVideo)
 
         # predict single sample
         print("%5d calculate I3D feature to %s" % (i, sFeaturePath))
-        arFeature = keI3D.predict(np.expand_dims(arFrames, axis=0))[0]
+        arFeature = keI3D.predict(np.expand_dims(arFrames, axis=0))[0]"""
 
         # save to file
         os.makedirs(sFeatureBaseDir + "/" + sLabel, exist_ok = True)
@@ -64,7 +80,7 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
 
 def main():
    
-    nClasses = 249
+    nClasses = 3
 
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
@@ -80,7 +96,7 @@ def main():
     NUM_RGB_CHANNELS = 3
     NUM_FLOW_CHANNELS = 2
 
-    #BATCHSIZE = 16
+    BATCHSIZE = 4
 
     print("\nStarting ChaLearn optical flow to I3D features calculation in directory:", os.getcwd())
 
@@ -100,8 +116,8 @@ def main():
     #keI3D_rgb.summary() 
 
     # calculate features from rgb frames
-    framesDir2featuresDir(sFrameDir + "/val", sFrameFeatureDir + "/val", keI3D_rgb, oClasses)
-    framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_rgb, oClasses)
+    framesDir2featuresDir(sFrameDir + "/val", sFrameFeatureDir + "/val", keI3D_rgb, BATCHSIZE, oClasses)
+    framesDir2featuresDir(sFrameDir + "/train", sFrameFeatureDir + "/train", keI3D_rgb, BATCHSIZE, oClasses)
 
 
     # Load pretrained i3d flow model without top layer 
@@ -113,8 +129,8 @@ def main():
     #keI3D_flow.summary() 
 
     # calculate features from optical flow
-    framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, oClasses)
-    framesDir2featuresDir(sFlowDir + "/train", sFlowFeatureDir + "/train", keI3D_flow, oClasses)
+    framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, BATCHSIZE, oClasses)
+    framesDir2featuresDir(sFlowDir + "/train", sFlowFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
 
     return
     

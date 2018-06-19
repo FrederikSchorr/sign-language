@@ -67,7 +67,7 @@ class FramesGenerator(keras.utils.Sequence):
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(self.nSamples / self.nBatchSize))
+        return int(np.ceil(self.nSamples / self.nBatchSize))
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -82,9 +82,8 @@ class FramesGenerator(keras.utils.Sequence):
         # Generate indexes of the batch
         indexes = self.indexes[nStep*self.nBatchSize:(nStep+1)*self.nBatchSize]
 
-        # Find list of IDs
+        # get batch of videos
         dfVideosBatch = self.dfVideos.loc[indexes, :]
-        #list_IDs_temp = [self.list_IDs[k] for k in indexes]
         nBatchSize = len(dfVideosBatch)
 
         # initialize arrays
@@ -95,6 +94,7 @@ class FramesGenerator(keras.utils.Sequence):
         for i in range(nBatchSize):
             # generate data for single video(frames)
             arX[i,], arY[i] = self.__data_generation(dfVideosBatch.iloc[i,:])
+            #print("Sample #%d" % (indexes[i]))
 
         # onehot the labels
         return arX, keras.utils.to_categorical(arY, num_classes=self.nClasses)
@@ -120,8 +120,8 @@ class FramesGenerator(keras.utils.Sequence):
 
         return ar_fFrames, seVideo.nLabel
 
-    def data_generation(self, seVideo:pd.Series) -> (np.array(float), int):
-        return self.__data_generation(seVideo)
+    """def data_generation(self, seVideo:pd.Series) -> (np.array(float), int):
+        return self.__data_generation(seVideo)"""
 
 
 class FeaturesGenerator(keras.utils.Sequence):
@@ -179,7 +179,7 @@ class FeaturesGenerator(keras.utils.Sequence):
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(self.nSamples / self.nBatchSize))
+        return int(np.ceil(self.nSamples / self.nBatchSize))
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -226,6 +226,7 @@ class VideoClasses():
         self.liClasses = list(self.dfClass.sClass)
         self.nClasses = len(self.dfClass)
         return
+
 
 
 def get_size(obj, seen=None):
