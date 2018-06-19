@@ -43,9 +43,9 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str,
     print("Predict I3D features with generator ... ")
     arPredictions = keI3D.predict_generator(
         generator = genFrames,
-        workers = 4,                 
+        workers = 1, #4,                 
         use_multiprocessing = False, #True,
-        max_queue_size = 8, 
+        #max_queue_size = 8, 
         verbose = 1)   
     print("I3D features shape %s" % (str(arPredictions.shape)))
 
