@@ -15,13 +15,12 @@ import time
 import numpy as np
 import pandas as pd
 
-from preprocess import videos2frames
-from datagenerator import VideoClasses, FramesGenerator
-from i3d_inception import Inception_Inflated3d, add_top_layer
-
 import keras
-#from keras.optimizers import SGD
-#from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
+
+sys.path.append(os.path.abspath("."))
+from s7i3d.preprocess import videos2frames
+from s7i3d.datagenerator import VideoClasses, FramesGenerator
+from s7i3d.i3d_inception import Inception_Inflated3d, add_top_layer
 
 
 def layers_freeze(keModel:keras.Model) -> keras.Model:

@@ -65,6 +65,9 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
 
 
 def main():
+
+    nClasses = 3
+
     sVideoDir = "../datasets/04-chalearn"
     sFrameDir = "06-i3d/data/frame"
     #sFlowDir =  "06-3id/data/opticalflow"

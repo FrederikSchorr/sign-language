@@ -1,4 +1,6 @@
 import glob
+import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -6,7 +8,8 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import keras
 
-from video2frame import file2frame, frames_trim, image_crop, image_rescale, frames_show
+sys.path.append(os.path.abspath("."))
+from s7i3d.video2frame import file2frames, frames_trim, image_crop, image_rescale, frames_show
 
 class FramesGenerator(keras.utils.Sequence):
     """Read and yields video frames for Keras.model.fit_generator
@@ -14,7 +17,7 @@ class FramesGenerator(keras.utils.Sequence):
 
 
     def __init__(self, sPath:str, \
-        nBatchSize:int, nFrames:int, nHeight:int, nWidth:int, nDepth:int, \
+        nBatchSize:int, nFrames:int, nHeight:int, nWidth:int, nChannels:int, \
         liClassesFull:list = None, bShuffle:bool = True):
         """
         Assume directory structure:
@@ -26,7 +29,8 @@ class FramesGenerator(keras.utils.Sequence):
         self.nFrames = nFrames
         self.nHeight = nHeight
         self.nWidth = nWidth
-        self.tuXshape = (nFrames, nHeight, nWidth, nDepth)
+        self.nChannels = nChannels
+        self.tuXshape = (nFrames, nHeight, nWidth, nChannels)
         self.bShuffle = bShuffle
 
         # retrieve all videos = frame directories
@@ -98,7 +102,10 @@ class FramesGenerator(keras.utils.Sequence):
         'Generates data for 1 sample' 
        
         # Get the frames from disc
-        ar_nFrames = file2frame(seVideo.sFrameDir)
+        ar_nFrames = file2frames(seVideo.sFrameDir)
+
+        # only use the first nChannels (typically 3, but maybe 2 for optical flow)
+        ar_nFrames = ar_nFrames[..., 0:self.nChannels]
         
         # crop to centered image
         ar_nFrames = image_crop(ar_nFrames, self.nHeight, self.nWidth)
