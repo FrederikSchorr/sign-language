@@ -61,7 +61,7 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
         os.makedirs(sFeatureBaseDir + "/" + sLabel, exist_ok = True)
         np.save(sFeatureBaseDir + "/" + sLabel + "/" + sVideoName + ".npy", arFeature)
 
-    print("%d I3D features saved to files in %s" % (i, sFeatureBaseDir))
+    print("%d I3D features saved to files in %s" % (i+1, sFeatureBaseDir))
     return
 
 
@@ -103,7 +103,7 @@ def main():
 
     # calculate features from optical flow
     framesDir2featuresDir(sFlowDir + "/val", sFlowFeatureDir + "/val", keI3D_flow, BATCHSIZE, oClasses)
-    #framesDir2featuresDir(sFrameDir + "/train", sFeatureDir + "/train")
+    framesDir2featuresDir(sFrameDir + "/train", sFeatureDir + "/train", keI3D_flow, BATCHSIZE, oClasses)
 
     return
     
