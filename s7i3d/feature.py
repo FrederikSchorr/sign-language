@@ -64,7 +64,7 @@ def framesDir2featuresDir(sFrameBaseDir:str, sFeatureBaseDir:str, keI3D:keras.Mo
 
 def main():
    
-    nClasses = 3
+    nClasses = 249
 
     # directories
     sClassFile       = "data-set/04-chalearn/class.csv"
