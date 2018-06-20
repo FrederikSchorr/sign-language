@@ -74,8 +74,8 @@ def main():
     sOflowFeatureDir = "data-temp/01-ledasila/%03d/oflow-mobilenet/val"%(nClasses)
 
     sModelDir        = "model"
-    sModelImage      = sModelDir + "/20180620-1653-ledasila021-image-mobile-lstm-last.h5"
-    sModelOflow      = sModelDir + "/20180620-1701-ledasila021-oflow-mobile-lstm-last.h5"
+    sModelImage      = sModelDir + "/20180620-1653-ledasila021-image-mobile-lstm-best.h5"
+    sModelOflow      = sModelDir + "/20180620-1701-ledasila021-oflow-mobile-lstm-best.h5"
 
     print("\nPredict with combined rgb + flow models ... ")
     print(os.getcwd())
@@ -85,11 +85,11 @@ def main():
 
     # predict on rgb features
     fAcc_rgb, _, arProba_rgb, liLabels_rgb = predict(sImageFeatureDir, sModelImage, oClasses)
-    print("RGB model accuracy: %.2f%%"%(fAcc_rgb*100.))
+    print("Image model accuracy: %.2f%%"%(fAcc_rgb*100.))
 
     # predict on flow features
     fAcc_flow, _, arProba_flow, liLabels_flow = predict(sOflowFeatureDir, sModelOflow, oClasses)
-    print("Flow model accuracy: %.2f%%"%(fAcc_flow*100.))
+    print("Optical flow model accuracy: %.2f%%"%(fAcc_flow*100.))
 
     # Combine predicted probabilities, first check if labels are equal
     if liLabels_rgb != liLabels_flow:
