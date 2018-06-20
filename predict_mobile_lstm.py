@@ -104,13 +104,23 @@ def main():
     if liLabels_image_best != liLabels_oflow_best:
         raise ValueError("The rgb and flwo labels do not match")
 
+    # average over all 4 models
     arSoftmax = arProba_image_best + arProba_image_last + arProba_oflow_best + arProba_oflow_last # shape = (nSamples, nClasses)
     arProba = np.exp(arSoftmax) / np.sum(np.exp(arSoftmax), axis=1).reshape(-1,1)
-    print("arProba shape: %s. Sum of 3rd sample: %f (should be 1.0)"%(str(arProba.shape), np.sum(arProba[3,...])))
+    #print("arProba shape: %s. Sum of 3rd sample: %f (should be 1.0)"%(str(arProba.shape), np.sum(arProba[3,...])))
 
     arPred = arProba.argmax(axis=1)
     fAcc = np.mean(liLabels_image_best == oClasses.dfClass.loc[arPred, "sClass"])
     print("\nCombined 4-model accuracy: %.2f%%"%(fAcc*100.))
+
+    # only flow models together
+    arSoftmax = arProba_oflow_best + arProba_oflow_last # shape = (nSamples, nClasses)
+    arProba = np.exp(arSoftmax) / np.sum(np.exp(arSoftmax), axis=1).reshape(-1,1)
+    #print("arProba shape: %s. Sum of 3rd sample: %f (should be 1.0)"%(str(arProba.shape), np.sum(arProba[3,...])))
+
+    arPred = arProba.argmax(axis=1)
+    fAcc = np.mean(liLabels_image_best == oClasses.dfClass.loc[arPred, "sClass"])
+    print("\nCombined 2 optical flow model accuracy: %.2f%%"%(fAcc*100.))
 
     return
 
