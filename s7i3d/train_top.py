@@ -76,7 +76,7 @@ def main():
     sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d"%(nClasses)
     sModelDir        = "model"
 
-    LEARNING_RATE = 1e-2
+    LEARNING_RATE = 1e-1
     EPOCHS = 100
     BATCHSIZE = 16
 
