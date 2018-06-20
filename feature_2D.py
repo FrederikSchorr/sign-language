@@ -99,6 +99,6 @@ def features_2D_extract(sFrameBaseDir:str, sFeatureBaseDir:str, keModel:keras.Mo
         print("%5d Features %s saved to %s" % (nCount, str(arFeature.shape), sFeaturePath))
         nCount += 1
 
-    print("%d features saved to files in %s" % (i+1, sFeatureBaseDir))
+    print("%d features saved to files in %s" % (nCount+1, sFeatureBaseDir))
     return
     
