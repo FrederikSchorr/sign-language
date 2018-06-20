@@ -68,7 +68,7 @@ def main():
 	keLSTM = lstm_load(sModelFile, nFramesNorm, diFeature["tuOutputShape"][0], oClasses.nClasses)
 
 	# read video files into list
-	liVideos = list_videos(sVideoDir, nSamplesMax = 10)
+	liVideos = list_videos(sVideoDir, nSamplesMax = 100)
 
 	nCount = 0
 	nSuccess = 0
@@ -76,8 +76,9 @@ def main():
 	for sVideoPath in liVideos:
 		
 		# read videofile into frames
-		print("\nPredict video {} ...".format(nCount))
+		print("\n%3d predict video %s ..." % (nCount, sVideoPath))
 		arFrames = video2frames(sVideoPath, nMinDim)
+		print("Frames: %s" % (str(arFrames.shape)))
 
 		# Translate frames to flows - these are already scaled between [-1.0, 1.0]
 		print("Calculate optical flow ...")
