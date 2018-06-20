@@ -26,7 +26,7 @@ def list_videos(sVideoDir, nSamplesMax = None):
 	liVideos = glob.glob(os.path.join(sVideoDir, "*", "*.*"))
 	nSamples = len(liVideos)
 	
-	if nSamples == 0: raise ValueError(Found no video files in %s" % sVideoDir)
+	if nSamples == 0: raise ValueError("Found no video files in %s" % sVideoDir)
 	
 	if nSamplesMax != None and nSamples > nSamplesMax:
 		liVideos = random.sample(liVideos, nSamplesMax)
