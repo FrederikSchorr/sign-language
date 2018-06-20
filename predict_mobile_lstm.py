@@ -101,7 +101,7 @@ def main():
     print("Optical flow last model accuracy: %.2f%%"%(fAcc_oflow_last*100.))
 
     # Combine predicted probabilities, first check if labels are equal
-    if liLabels_rgb != liLabels_flow:
+    if liLabels_image_best != liLabels_oflow_best:
         raise ValueError("The rgb and flwo labels do not match")
 
     arSoftmax = arProba_image_best + arProba_image_last + arProba_oflow_best + arProba_oflow_last # shape = (nSamples, nClasses)
