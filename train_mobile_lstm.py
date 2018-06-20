@@ -50,7 +50,7 @@ def train(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.Model, oCl
         filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-best.h5",
         verbose = 1, save_best_only = True)
 
-    optimizer = Adam(lr=fLearn)
+    optimizer = keras.optimizers.Adam(lr = fLearn)
     # Use same optimizer as in https://github.com/deepmind/kinetics-i3d
     #optimizer = keras.optimizers.SGD(lr = fLearn, momentum = 0.9, decay = 1e-7)
     keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
