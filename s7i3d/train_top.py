@@ -76,8 +76,8 @@ def main():
     sFlowFeatureDir  = "data-temp/04-chalearn/%03d/oflow-i3d"%(nClasses)
     sModelDir        = "model"
 
-    LEARNING_RATE = 1e-3
-    EPOCHS = 50
+    LEARNING_RATE = 1e-2
+    EPOCHS = 100
     BATCHSIZE = 16
 
     print("\nStarting I3D top training on ChaLearn data ... \n%s" %(os.getcwd()))
@@ -85,7 +85,7 @@ def main():
     # read the ChaLearn classes
     oClasses = VideoClasses(sClassFile)
 
-    # RGB: Load empty i3d top layer and train it
+    """# RGB: Load empty i3d top layer and train it
     print("Load new I3D rgb top model ...")
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
         "-chalearn%03d-rgb-i3dtop.csv"%(nClasses)
@@ -93,7 +93,7 @@ def main():
     keI3D_top_rgb = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
     keI3D_top_rgb.summary()
     train_i3d_top(sFrameFeatureDir, sModelDir, sLogPath, keI3D_top_rgb, oClasses,
-        BATCHSIZE, EPOCHS, LEARNING_RATE)
+        BATCHSIZE, EPOCHS, LEARNING_RATE)"""
 
     # FLOW: Load empty i3d top layer and train it
     print("Load new I3D flow top model ...")
@@ -108,8 +108,4 @@ def main():
     
     
 if __name__ == '__main__':
-    # generate features
-    import s7i3d.feature
-    s7i3d.feature.main()
-    # train 
     main()
