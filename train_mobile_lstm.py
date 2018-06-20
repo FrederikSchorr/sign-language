@@ -110,7 +110,7 @@ def main():
 
     keModelImage = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
-        nBatchSize = 16, nEpoch = 50, fLearn = 1e-3)
+        nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     # Oflow: Load LSTM and train it
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
