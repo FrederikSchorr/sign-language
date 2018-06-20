@@ -109,7 +109,7 @@ def main():
     print("arProba shape: %s. Sum of 3rd sample: %f (should be 1.0)"%(str(arProba.shape), np.sum(arProba[3,...])))
 
     arPred = arProba.argmax(axis=1)
-    fAcc = np.mean(liLabels_rgb == oClasses.dfClass.loc[arPred, "sClass"])
+    fAcc = np.mean(liLabels_image_best == oClasses.dfClass.loc[arPred, "sClass"])
     print("\nCombined 4-model accuracy: %.2f%%"%(fAcc*100.))
 
     return
