@@ -24,6 +24,7 @@ from datagenerator import FramesGenerator
 
 def features_2D_load_model(diFeature:dict) -> keras.Model:
     sModelName = diFeature["sName"]
+    print("Load 2D extraction model %s ..." % sModelName)
 
     # load pretrained keras models
     if sModelName == "mobilenet":
@@ -64,8 +65,9 @@ def features_2D_load_model(diFeature:dict) -> keras.Model:
     return keModel
 
 
-def features_2D_extract(sFrameBaseDir:str, sFeatureBaseDir:str, keModel:keras.Model, 
-    nFramesNorm:int = 20, nBatchSize:int = 16):
+
+def features_2D_predict_generator(sFrameBaseDir:str, sFeatureBaseDir:str, keModel:keras.Model, 
+    nFramesNorm:int = 20):
 
     # do not (partially) overwrite existing feature directory
     if os.path.exists(sFeatureBaseDir): 
@@ -76,7 +78,6 @@ def features_2D_extract(sFrameBaseDir:str, sFeatureBaseDir:str, keModel:keras.Mo
     _, h, w, c = keModel.input_shape
     genFrames = FramesGenerator(sFrameBaseDir, 1, nFramesNorm, h, w, c, 
         liClassesFull = None, bShuffle=False)
-
 
     print("Predict features with %s ... " % keModel.name)
     nCount = 0

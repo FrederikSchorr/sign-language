@@ -13,15 +13,16 @@ import pandas as pd
 
 import cv2
 
-from frame import file2frames
+from frame import files2frames, video2frames, frames_show
 
 
-def frames2flows(arFrames:np.array(int), fBound:float = 15.) -> np.array(int):
+def frames2flows(arFrames:np.array(int), bThirdChannel:bool = False, fBound:float = 15.) -> np.array(int):
     """ Calculates optical flow from frames
 
     Returns:
         array of flow-arrays, each with dim (h, w, 2), 
         with "flow"-values truncated to [-15.0, 15.0] and then scaled to [-1.0, 1.0]
+        If bThirdChannel = True a third channel with zeros is added
     """
     n, h, w, c = arFrames.shape
 
@@ -29,6 +30,7 @@ def frames2flows(arFrames:np.array(int), fBound:float = 15.) -> np.array(int):
     arPrev = cv2.cvtColor(arFrames[0, ...], cv2.COLOR_BGR2GRAY)
 
     #TVL1 = cv2.DualTVL1OpticalFlow_create(warps=1)
+    if bThirdChannel: arZeros = np.zeros((h, w, 1), dtype = np.float32)
     liFlows = []
     # loop through all frames
     for i in range(n):
@@ -51,6 +53,10 @@ def frames2flows(arFrames:np.array(int), fBound:float = 15.) -> np.array(int):
         ar_f_Flow[ar_f_Flow < -fBound] = -fBound
         ar_f_Flow = ar_f_Flow / fBound
 
+        if bThirdChannel:
+            # add third empty channel
+            ar_f_Flow = np.concatenate((ar_f_Flow, arZeros), axis=2)
+
         # save in list and to file
         liFlows.append(ar_f_Flow)
         arPrev = arFrame
@@ -58,16 +64,15 @@ def frames2flows(arFrames:np.array(int), fBound:float = 15.) -> np.array(int):
     return np.array(liFlows)
 
 
+
 def flows2file(arFlows:np.array(float), sTargetDir:str):
-    """ Save array of flows (2 channels with values in [-1.0, 1.0] 
+    """ Save array of flows (2 channels with values in [-1.0, 1.0]) 
     to jpg files (with 3 channels 0-255 each) in sTargetDir
     """
 
     n, h, w, c = arFlows.shape
 
     os.makedirs(sTargetDir, exist_ok=True)
-    #os.makedirs(sTargetDir + "/u", exist_ok=True)
-    #os.makedirs(sTargetDir + "/v", exist_ok=True)
 
     arZeros = np.zeros((h, w, 1), dtype = np.float32)
 
@@ -79,15 +84,10 @@ def flows2file(arFlows:np.array(float), sTargetDir:str):
         # rescale to 0-255  
         ar_n_Flow = np.round((ar_f_Flow + 1.0) * 127.5).astype(np.uint8)
 
-        # save x, y flows to r and g channels, since opencv reverses the colors
-        #cv2.imwrite(sTargetDir + "/flow%03d.png"%(i), ar_n_Flow[:,:,::-1])
         cv2.imwrite(sTargetDir + "/flow%03d.jpg"%(i), ar_n_Flow)
 
-        # save horizontal + vertical to (compressed) jpg files
-        #cv2.imwrite(sTargetDir + "/u/frame%03d.jpg"%(i), arFlow[:, :, 0])
-        #cv2.imwrite(sTargetDir + "/v/frame%03d.jpg"%(i), arFlow[:, :, 1])
-
     return
+
 
 
 def file2flows(sDir:str, b3channels:bool = False) -> np.array:
@@ -189,7 +189,7 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
         sFlowDir = sFlowBaseDir + "/" + sFrameDir
 
         # retrieve frame files - in ascending order
-        arFrames = file2frames(sFrameBaseDir + "/" + sFrameDir)
+        arFrames = files2frames(sFrameBaseDir + "/" + sFrameDir)
         print("%5d | Calculating optical flow from %3d frames to %s" % (nCounter, arFrames.shape[0], sFlowDir))
 
         # calculate and save optical flow

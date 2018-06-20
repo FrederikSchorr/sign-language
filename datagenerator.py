@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import keras
 
-from frame import file2frames, frames_trim, image_crop, image_rescale, frames_show
+from frame import files2frames, images_normalize, frames_show
 
 class FramesGenerator(keras.utils.Sequence):
     """Read and yields video frames for Keras.model.fit_generator
@@ -102,20 +102,13 @@ class FramesGenerator(keras.utils.Sequence):
         "Returns frames for 1 video, including normalizing & preprocessing"
        
         # Get the frames from disc
-        ar_nFrames = file2frames(seVideo.sFrameDir)
+        ar_nFrames = files2frames(seVideo.sFrameDir)
 
         # only use the first nChannels (typically 3, but maybe 2 for optical flow)
         ar_nFrames = ar_nFrames[..., 0:self.nChannels]
         
-        # crop to centered image
-        ar_nFrames = image_crop(ar_nFrames, self.nHeight, self.nWidth)
-
-        # normalize to [-1.0, 1.0]
-        ar_fFrames = image_rescale(ar_nFrames)
+        ar_fFrames = images_normalize(ar_nFrames, self.nFrames, self.nHeight, self.nWidth, bRescale = True)
         
-        # normalize the number of frames (if upsampling necessary => in the end, otherwise better early)
-        ar_fFrames = frames_trim(ar_fFrames, self.nFrames)
-
         return ar_fFrames, seVideo.nLabel
 
     def data_generation(self, seVideo:pd.Series) -> (np.array(float), int):

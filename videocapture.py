@@ -5,6 +5,13 @@ import numpy as np
 
 import cv2
 
+#from frame import resize_aspectratio
+
+def camera_resolution(oStream, nWidth, nHeight):
+	oStream.set(3, nWidth)
+	oStream.set(4, nHeight)
+	return
+
 
 def rectangle_text(oFrame, sColor, sUpper, sLower = None, fBoxSize = 0.8):
 
@@ -21,13 +28,14 @@ def rectangle_text(oFrame, sColor, sUpper, sLower = None, fBoxSize = 0.8):
 
 	# display a text to the frame 
 	font = cv2.FONT_HERSHEY_SIMPLEX
+	fFontSize = 0.7
 	textSize = cv2.getTextSize(sUpper, font, 1.0, 2)[0]
-	cv2.putText(oFrame, sUpper, (x1 + 10, y1 + textSize[1] + 10), font, 1.0, bgr, 2)	
+	cv2.putText(oFrame, sUpper, (x1 + 10, y1 + textSize[1] + 10), font, fFontSize, bgr, 2)	
 
 	# 2nd text
 	if (sLower != None):
 		textSize = cv2.getTextSize(sLower, font, 1.0, 2)[0]
-		cv2.putText(oFrame, sLower, (x1 + 10, nHeigth - y1 - 10), font, 1.0, bgr, 2)
+		cv2.putText(oFrame, sLower, (x1 + 10, nHeigth - y1 - 10), font, fFontSize, bgr, 2)
 
 	return oFrame
 
@@ -41,15 +49,15 @@ def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0):
 	s = sUpper
 	while True:
 		# grab the frame from the threaded video file stream
-		(bGrabbed, oFrame) = oStream.read()
+		(bGrabbed, arFrame) = oStream.read()
 
 		if nCountdown > 0:
 			fCountdown = fTimeTarget - time.time()
 			s = sUpper + str(int(fCountdown)+1) + " sec"
 
 		# paint rectangle & text, show the (mirrored) frame
-		oFrame = rectangle_text(cv2.flip(oFrame, 1), sColor, s, sLower)
-		cv2.imshow("Video", oFrame)
+		arFrame = rectangle_text(cv2.flip(arFrame, 1), sColor, s, sLower)
+		cv2.imshow("Video", arFrame)
 	
 		# stop after countdown
 		if nCountdown > 0 and fCountdown <= 0.0:
@@ -62,7 +70,7 @@ def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0):
 	return key
 
 
-def video_capture(oStream, sColor, sText, nTimeDuration):
+def video_capture(oStream, sColor, sText, nTimeDuration) -> np.array:
 
 	liFrames = []
 	fTimeStart = time.time()
@@ -89,10 +97,10 @@ def video_capture(oStream, sColor, sText, nTimeDuration):
 		if key == ord('q'): break
 		cv2.waitKey(1)
 
-	return fTimeElapsed, liFrames
+	return fTimeElapsed, np.array(liFrames)
 
 
-def frame_show(oStream, sColor, sText):
+def frame_show(oStream, sColor:str, sText:str):
 	""" Read frame from webcam and display it with box+text """
 
 	(bGrabbed, oFrame) = oStream.read()
@@ -103,9 +111,10 @@ def frame_show(oStream, sColor, sText):
 	return
 
 
-def main():
+def unittest():
 	# open a pointer to the video stream
 	oStream = cv2.VideoCapture(0)
+	camera_resolution(oStream, 352, 288)
 	#liFrames = []
 
 	# loop over action states
@@ -145,4 +154,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    unittest()

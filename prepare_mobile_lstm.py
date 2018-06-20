@@ -24,6 +24,7 @@ def main():
     # important constants
     nClasses = 21   # number of classes
     nFrames = 20    # number of frames per video
+    nMinDim = 288   # smaller dimension of saved video-frames. typically same as video 
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -45,7 +46,7 @@ def main():
     print(os.getcwd())
     
     # extract frames from videos
-    videosDir2framesDir(sVideoDir, sImageDir)
+    videosDir2framesDir(sVideoDir, sImageDir, nMinDim)
 
     # calculate optical flow
     framesDir2flowsDir(sImageDir, sOflowDir)

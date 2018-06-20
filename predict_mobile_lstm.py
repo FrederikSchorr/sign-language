@@ -16,7 +16,34 @@ import keras
 from datagenerator import VideoClasses, FeaturesGenerator
 
 
-def predict(sFeatureDir:str, sModelPath:str, oClasses:VideoClasses, nBatchSize:int = 16):    
+def predict(arFeatures:np.array(float), keModel:keras.Model, oClasses:VideoClasses, nTop:int = 3) -> (int, str, float):
+    """ Run the features (of the frames of the video) of 1 sample through LSTM to predict video
+    # Return
+        3-tuple: predicted nLabel, sLabel, fProbability
+        in addition print nTop most probable labels
+    """
+
+    if keModel.input_shape[1:] != arFeatures.shape: raise ValueError("Incorrect shapes")
+
+    # infer on network
+    arX = np.expand_dims(arFeatures, axis=0)
+    print("Predict video category with %s ..." % (keModel.name))
+    arProbas = keModel.predict(arX, verbose = 1)[0]
+
+    arTopLabels = arProbas.argsort()[-nTop:][::-1]
+    arTopProbas = arProbas[arTopLabels]
+
+
+    for i in range(nTop):
+        print("Top %d: [%3d] %s (confidence %.0f%%)" % \
+            (i+1, arTopLabels[i], oClasses.dfClass.sClass[arTopLabels[i]], arTopProbas[i]*100.))
+
+    return arTopLabels[0], oClasses.dfClass.sClass[arTopLabels[0]], arTopProbas[0]
+
+
+
+
+def predict_generator(sFeatureDir:str, sModelPath:str, oClasses:VideoClasses, nBatchSize:int = 16):    
     """ Predict labels for all features in given directory on saved model 
     
     Returns 
@@ -87,17 +114,21 @@ def main():
     oClasses = VideoClasses(sClassFile)
 
     # predict on image features
-    fAcc_image_best, _, arProba_image_best, liLabels_image_best = predict(sImageFeatureDir, sModelImageBest, oClasses)
+    fAcc_image_best, _, arProba_image_best, liLabels_image_best = \
+        predict_generator(sImageFeatureDir, sModelImageBest, oClasses)
     print("Image best model accuracy: %.2f%%"%(fAcc_image_best*100.))
 
-    fAcc_image_last, _, arProba_image_last, liLabels_image_last = predict(sImageFeatureDir, sModelImageLast, oClasses)
+    fAcc_image_last, _, arProba_image_last, liLabels_image_last = \
+        predict_generator(sImageFeatureDir, sModelImageLast, oClasses)
     print("Image last model accuracy: %.2f%%"%(fAcc_image_last*100.))
 
     # predict on flow features
-    fAcc_oflow_best, _, arProba_oflow_best, liLabels_oflow_best = predict(sOflowFeatureDir, sModelOflowBest, oClasses)
+    fAcc_oflow_best, _, arProba_oflow_best, liLabels_oflow_best = \
+        predict_generator(sOflowFeatureDir, sModelOflowBest, oClasses)
     print("Optical flow best model accuracy: %.2f%%"%(fAcc_oflow_best*100.))
 
-    fAcc_oflow_last, _, arProba_oflow_last, liLabels_oflow_last = predict(sOflowFeatureDir, sModelOflowLast, oClasses)
+    fAcc_oflow_last, _, arProba_oflow_last, liLabels_oflow_last = \
+        predict_generator(sOflowFeatureDir, sModelOflowLast, oClasses)
     print("Optical flow last model accuracy: %.2f%%"%(fAcc_oflow_last*100.))
 
     # Combine predicted probabilities, first check if labels are equal
@@ -109,7 +140,7 @@ def main():
     arProba = np.exp(arSoftmax) / np.sum(np.exp(arSoftmax), axis=1).reshape(-1,1)
     arPred = arProba.argmax(axis=1)
     fAcc = np.mean(liLabels_image_best == oClasses.dfClass.loc[arPred, "sClass"])
-    print("\Last image & last optical flow model combined accuracy: %.2f%%"%(fAcc*100.))
+    print("\nLast image & last optical flow model combined accuracy: %.2f%%"%(fAcc*100.))
 
     # only flow models together
     arSoftmax = arProba_oflow_best + arProba_oflow_last # shape = (nSamples, nClasses)

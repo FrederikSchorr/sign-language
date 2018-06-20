@@ -26,12 +26,11 @@ def resize_aspectratio(arImage: np.array, nMinDim:int = 256) -> np.array:
 
     return arImage
 
-def video2frames(sVideoPath:str, nMinDim:int = 256) -> np.array:
+def video2frames(sVideoPath:str, nMinDim) -> np.array:
     """ Read video file with OpenCV and return array of frames
 
-    Frames are resized preserving aspect ratio 
-    so that the smallest dimension is 256 pixels, 
-    with bilinear interpolation
+    if nMinDim == True: Frames are resized preserving aspect ratio 
+        so that the smallest dimension is eg 256 pixels, with bilinear interpolation
     """
     
     # Create a VideoCapture object and read from input file
@@ -46,8 +45,9 @@ def video2frames(sVideoPath:str, nMinDim:int = 256) -> np.array:
         (bGrabbed, arFrame) = oVideo.read()
         if bGrabbed == False: break
 
-        # resize image
-        arFrameResized = resize_aspectratio(arFrame, nMinDim)
+        if nMinDim != None:
+            # resize image
+            arFrameResized = resize_aspectratio(arFrame, nMinDim)
 
 		# Save the resulting frame to list
         liFrames.append(arFrameResized)
@@ -55,7 +55,7 @@ def video2frames(sVideoPath:str, nMinDim:int = 256) -> np.array:
     return np.array(liFrames)
 
 
-def frames2file(arFrames:np.array, sTargetDir:str):
+def frames2files(arFrames:np.array, sTargetDir:str):
     """ Write array of frames to jpg files
     Input: arFrames = (number of frames, height, width, depth)
     """
@@ -65,7 +65,7 @@ def frames2file(arFrames:np.array, sTargetDir:str):
     return
 
 
-def file2frames(sPath:str) -> np.array:
+def files2frames(sPath:str) -> np.array:
     # important to sort image files upfront
     liFiles = sorted(glob.glob(sPath + "/*.jpg"))
     if len(liFiles) == 0: raise ValueError("No frames found in " + sPath)
@@ -79,12 +79,12 @@ def file2frames(sPath:str) -> np.array:
     return np.array(liFrames)
     
     
-def frames_trim(arFrames:np.array, nFramesTarget:int) -> np.array:
+def frames_downsample(arFrames:np.array, nFramesTarget:int) -> np.array:
     """ Adjust number of frames (eg 123) to nFramesTarget (eg 79)
     works also if originally less frames then nFramesTarget
     """
 
-    nSamples, nHeight, nWidth, nDepth = arFrames.shape
+    nSamples, _, _, _ = arFrames.shape
     if nSamples == nFramesTarget: return arFrames
 
     # down/upsample the list of frames
@@ -97,7 +97,7 @@ def frames_trim(arFrames:np.array, nFramesTarget:int) -> np.array:
     return np.array(liTarget)
     
     
-def image_crop(arFrames:np.array, nHeightTarget, nWidthTarget) -> np.array:
+def images_crop(arFrames:np.array, nHeightTarget, nWidthTarget) -> np.array:
     """ crop each frame in array to specified size, choose centered image
     """
     nSamples, nHeight, nWidth, nDepth = arFrames.shape
@@ -114,14 +114,39 @@ def image_crop(arFrames:np.array, nHeightTarget, nWidthTarget) -> np.array:
     return arFrames
 
 
-def image_rescale(arFrames:np.array) -> np.array(float):
-    """ Normalize array of images (rgb 0-255) to [-1.0, 1.0]
+def images_rescale(arFrames:np.array) -> np.array(float):
+    """ Rescale array of images (rgb 0-255) to [-1.0, 1.0]
     """
 
     ar_fFrames = arFrames / 127.5
     ar_fFrames -= 1.
 
     return ar_fFrames
+
+
+def images_normalize(arFrames:np.array, nFrames:int, nHeight:int, nWidth:int, bRescale:bool = True) -> np.array(float):
+    """ Several image normalizations/preprocessing: 
+        - downsample number of frames
+        - crop to centered image
+        - rescale rgb 0-255 value to [-1.0, 1.0] - only if bRescale == True
+
+    Returns array of floats
+    """
+
+    # normalize the number of frames (assuming typically downsampling)
+    arFrames = frames_downsample(arFrames, nFrames)
+
+    # crop to centered image
+    arFrames = images_crop(arFrames, nHeight, nWidth)
+
+    if bRescale:
+        # normalize to [-1.0, 1.0]
+        arFrames = image_rescale(arFrames)
+    else:
+        if np.max(np.abs(arFrames)) > 1.0: warnings.warn("Images not normalized")
+
+    return arFrames
+
 
 
 def frames_show(arFrames:np.array, nWaitMilliSec:int = 100):
@@ -135,7 +160,7 @@ def frames_show(arFrames:np.array, nWaitMilliSec:int = 100):
     return
 
 
-def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
+def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = None):
     """ Extract frames from videos 
     
     Input video structure:
@@ -168,7 +193,7 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
     for sVideoPath in dfVideos.sVideoPath:
 
         # slice videos into frames with OpenCV
-        arFrames = video2frames(sVideoPath, nMinDim = 240)
+        arFrames = video2frames(sVideoPath, nMinDim)
         
         # create diretory (assumed directories see above)
         li_sVideoPath = sVideoPath.split("/")

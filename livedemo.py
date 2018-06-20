@@ -8,84 +8,49 @@ import pandas as pd
 
 import cv2
 
-sys.path.append(os.path.abspath("."))
-from s3chalearn.deeplearning import VideoClasses, ConvNet, RecurrentNet, VideoFeatures
-from s5predict_realtime.videocapture import frame_show, video_show, video_capture
 
-
-
-def frames_to_features(oCNN, liFrames, nFramesNorm):
-	""" Extract CNN features from frames
-
-	# Returns 
-		An array with extracted features
-	"""
-	
-	# check number of frames
-	if len(liFrames) > nFramesNorm:
-		# downsample the list of frames
-		print("Downsample number of frames from %d to %d" % (len(liFrames), nFramesNorm))
-		fraction = len(liFrames) / nFramesNorm
-		index = [int(fraction * i) for i in range(nFramesNorm)]
-		liNorm = [liFrames[i] for i in index]
-		liFrames = liNorm
-
-	elif (len(liFrames) < nFramesNorm):
-		raise ValueError("Not enough frames, expected %d" % nFramesNorm)
-	
-	# Get the prediction
-	print("Calculate CNN features from %d frames" % len(liFrames))
-	arFrames = oCNN.resize_transform(liFrames)
-	arFrames = oCNN.preprocess_input(arFrames)
-	arFeatures = oCNN.keModel.predict(arFrames, verbose=1)
-     
-	return arFeatures
-
-
-def classify_video(oRNN, arFeatures):
-	""" Run the features (of the frames) through LSTM to classify video
-
-    # Return
-	 	(5 most probable labels, their probabilities) 
-    """
-
-	if arFeatures.shape != (oRNN.nFramesNorm, oRNN.nFeatureLength): raise ValueError("Incorrect shapes")
-
-    # Only predict 1 sample
-	arFeatures.resize(1, oRNN.nFramesNorm, oRNN.nFeatureLength) 
-
-    # infer on RNN network
-	print("Predict video category through {} ...".format(oRNN.sName))
-	arPredictProba = oRNN.keModel.predict(arFeatures, verbose = 1)[0]
-
-	arBestLabel = arPredictProba.argsort()[-5:][::-1]
-	arBestProba = arPredictProba[arBestLabel]
-
-	print("Most probable 5 classes:" + str(arBestLabel))
-	print("with probabilites      :" + str(arBestProba))
-	
-	return arBestLabel, arBestProba
+from frame import images_normalize
+from videocapture import camera_resolution, frame_show, video_show, video_capture
+from opticalflow import frames2flows
+from datagenerator import VideoClasses
+from feature_2D import features_2D_load_model
+from train_mobile_lstm import lstm_load
+from predict_mobile_lstm import predict
 
 
 def main():
-	sModelFile = "model/20180612-0847-lstm-41662in249-best.h5"
-	sClassFile = "data-set/04-chalearn/class.csv"
-	nFramesNorm = 20
+	
+	# important constants
+	nClasses = 21   	# number of classes
+	nFramesNorm = 20    # number of frames per video
+	nMinDim = 288   	# smaller dimension of saved video-frames. typically same as video 
+
+
+	# feature extractor 
+	diFeature = {"sName" : "mobilenet",
+		"tuInputShape" : (224, 224, 3),
+		"tuOutputShape" : (1024, )
+	}
+
+	# files
+	sClassFile	= "data-set/01-ledasila/%03d/class.csv"%(nClasses)
+	sModelFile 	= "model/20180620-1701-ledasila021-oflow-mobile-lstm-best.h5"
 
 	print("\nStarting gesture recognition live demo from " + os.getcwd())
 	
 	# load label description
 	oClasses = VideoClasses(sClassFile)
 
-	# load neural networks
-	oCNN = ConvNet("mobilenet")
-	oCNN.load_model()
+	# Load pretrained MobileNet model without top layer 
+	keFeature = features_2D_load_model(diFeature)
+	h, w, c = diFeature["tuInputShape"]
 
-	oRNN = RecurrentNet("lstm", nFramesNorm, oCNN.nOutputFeatures, oClasses)
-	oRNN.load_model(sModelFile)
+	# Load trained LSTM network
+	keLSTM = lstm_load(sModelFile, nFramesNorm, diFeature["tuOutputShape"][0], oClasses.nClasses)
 
 	# open a pointer to the webcam video stream
 	oStream = cv2.VideoCapture(0)
+	camera_resolution(oStream, 352, 288)
 
 	# loop over action states
 	print("Launch video capture screen ...")
@@ -100,24 +65,29 @@ def main():
 			video_show(oStream, "orange", "Recording starts in ", None, 3)
 			
 			# record video for n sec
-			fElapsed, liFrames = video_capture(oStream, "red", "Recording ", 5)
+			fElapsed, arFrames = video_capture(oStream, "red", "Recording ", 5)
 			print("\nCaptured video: {:.1f} sec, {} frames, {:.1f} fps". \
-				format(fElapsed, len(liFrames), len(liFrames)/fElapsed))
-
-			if len(liFrames) < nFramesNorm: 
-				sResults = "No sufficiently long sign detected"
-				continue
+				format(fElapsed, len(arFrames), len(arFrames)/fElapsed))
 
 			# show orange wait box
 			frame_show(oStream, "orange", "Translating sign ...")
 
-			# run NN to translate video to label
-			arFeatures = frames_to_features(oCNN, liFrames, nFramesNorm)
-			arLabel, arProba = classify_video(oRNN, arFeatures)
+			# Translate frames to flows - these are already scaled between [-1.0, 1.0]
+			print("Calculate optical flow ...")
+			arFlows = frames2flows(arFrames, bThirdChannel = True)
 
-			nPred = arLabel[0]
-			sResults = "Identified sign: [{}] {} (confidence {:.0f}%)". \
-				format(oClasses.dfClass.sClass[nPred], oClasses.dfClass.sDetail[nPred], arProba[0]*100)
+			# downsample number of frames and crop to center
+			arFlows = images_normalize(arFlows, nFramesNorm, h, w, bRescale = False)
+
+			# Calculate feature from flows
+			print("Predict %s features ..." % keFeature.name)
+			arFeatures = keFeature.predict(arFlows, verbose=1)
+
+			# Classify flows with LSTM network
+			print("Final predict with LSTM ...")
+			nLabel, sLabel, fProba = predict(arFeatures, keLSTM, oClasses, nTop = 3)
+
+			sResults = "Identified sign: [%d] %s (confidence %.0f%%)" % (nLabel, sLabel, fProba*100.)
 			print(sResults)
 
 			# ready for next video	

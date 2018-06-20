@@ -32,7 +32,20 @@ def lstm_build(nFramesNorm:int, nFeatureLength:int, nClasses:int, fDropout:float
     return keModel
 
 
-def train(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.Model, oClasses: VideoClasses,
+def lstm_load(sPath:str, nFramesNorm:int, nFeatureLength:int, nClasses:int) -> keras.Model:
+
+    print("Load trained LSTM model from %s" % sPath)
+    keModel = keras.models.load_model(sPath)
+
+    if keModel.input_shape != (None, nFramesNorm, nFeatureLength):
+        raise ValueError("Unexpected LSTM input shape")
+    if keModel.output_shape != (None, nClasses):
+        raise ValueError("Unexpected LSTM output shape")
+
+    return keModel
+
+
+def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.Model, oClasses: VideoClasses,
     nBatchSize:int=16, nEpoch:int=100, fLearn:float=1e-4):
 
     # Load training data
@@ -109,7 +122,7 @@ def main():
     print("Image log: %s" % sLogPath)
 
     keModelImage = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
-    train(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
+    train_generator(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
         nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     # Oflow: Load LSTM and train it
@@ -118,7 +131,7 @@ def main():
     print("Optical flow log: %s" % sLogPath)
 
     keModelOflow = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
-    train(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
+    train_generator(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
         nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     return
