@@ -177,7 +177,7 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
     # get list of directories with frames: ... / sFrameDir/train/class/videodir/frames.jpg
     sCurrentDir = os.getcwd()
     os.chdir(sFrameBaseDir)
-    liVideos = glob.glob("*/*/*")
+    liVideos = sorted(glob.glob("*/*/*"))
     os.chdir(sCurrentDir)
     print("Found %d directories=videos with frames" % len(liVideos))
 

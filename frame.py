@@ -151,7 +151,7 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nClasses = None):
         return 
 
     # get videos. Assume sVideoDir / train / class / video.mp4
-    dfVideos = pd.DataFrame(glob.glob(sVideoDir + "/*/*/*.*"), columns=["sVideoPath"])
+    dfVideos = pd.DataFrame(sorted(glob.glob(sVideoDir + "/*/*/*.*")), columns=["sVideoPath"])
     print("Located {} videos in {}, extracting to {} ..."\
         .format(len(dfVideos), sVideoDir, sFrameDir))
     if len(dfVideos) == 0: raise ValueError("No videos found")

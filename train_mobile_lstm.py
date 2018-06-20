@@ -6,7 +6,7 @@ import os
 import glob
 import time
 import sys
-import warings
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -27,7 +27,7 @@ def lstm_build(nFramesNorm:int, nFeatureLength:int, nClasses:int, fDropout:float
     keModel.add(keras.layers.LSTM(nFeatureLength * 1, return_sequences=False, dropout=fDropout))
     keModel.add(keras.layers.Dense(nClasses, activation='softmax'))
 
-    #self.keModel.summary()
+    keModel.summary()
 
     return keModel
 
@@ -102,23 +102,23 @@ def main():
     # read the classes
     oClasses = VideoClasses(sClassFile)
 
-    # RGB: Load LSTM and train it
-    print("Load new I3D rgb top model ...")
+    # Image: Load LSTM and train it
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
         "-ledasila%03d-image-mobile-lstm.csv"%(nClasses)
+    print("Image log: %s" % sLogPath)
 
-    keModelImage = lstm_build_model(nFrames, tuFeature["nOutputShape"], oClasses.nClasses, fDropout = 0.5)
+    keModelImage = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
-        nBatchSize = 16, nEpochs = 3, fLearn = 1e-3)
+        nBatchSize = 16, nEpoch = 50, fLearn = 1e-3)
 
-    """# FLOW: Load empty i3d top layer and train it
-    print("Load new I3D flow top model ...")
+    # Oflow: Load LSTM and train it
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
-        "-chalearn%03d-oflow-i3dtop.csv"%(nClasses)
+        "-ledasila%03d-oflow-mobile-lstm.csv"%(nClasses)
+    print("Optical flow log: %s" % sLogPath)
 
-    keI3D_top_flow = Inception_Inflated3d_Top(oClasses.nClasses, dropout_prob=0.5)
-    train_i3d_top(sFlowFeatureDir, sModelDir, sLogPath, keI3D_top_flow, oClasses,
-        BATCHSIZE, EPOCHS, LEARNING_RATE)"""           
+    keModelOflow = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
+    train(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
+        nBatchSize = 16, nEpoch = 50, fLearn = 1e-3)
 
     return
     

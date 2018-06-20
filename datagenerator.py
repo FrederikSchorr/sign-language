@@ -32,7 +32,7 @@ class FramesGenerator(keras.utils.Sequence):
         self.bShuffle = bShuffle
 
         # retrieve all videos = frame directories
-        self.dfVideos = pd.DataFrame(glob.glob(sPath + "/*/*"), columns=["sFrameDir"])
+        self.dfVideos = pd.DataFrame(sorted(glob.glob(sPath + "/*/*")), columns=["sFrameDir"])
         self.nSamples = len(self.dfVideos)
         if self.nSamples == 0: raise ValueError("Found no frame directories files in " + sPath)
         print("Detected %d samples in %s ..." % (self.nSamples, sPath))
@@ -140,7 +140,7 @@ class FeaturesGenerator(keras.utils.Sequence):
         self.bShuffle = bShuffle
 
         # retrieve all feature files
-        self.dfSamples = pd.DataFrame(glob.glob(sPath + "/*/*.npy"), columns=["sPath"])
+        self.dfSamples = pd.DataFrame(sorted(glob.glob(sPath + "/*/*.npy")), columns=["sPath"])
         self.nSamples = len(self.dfSamples)
         if self.nSamples == 0: raise ValueError("Found no feature files in " + sPath)
         print("Detected %d samples in %s ..." % (self.nSamples, sPath))

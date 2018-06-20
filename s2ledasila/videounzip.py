@@ -61,7 +61,7 @@ def unzip_sort_videos(sVideoDir:str, sVideoZip:str, nMinOccur:int = 1):
     dfLabel_top = dfLabel_top.sort_values(by = ["sLabel"]).reset_index(drop=True)
     dfLabel_top.loc[:,"sDetail"] = " "
     sClassFile = sMotherDir + "/class.csv"
-    dfLabel_top.to_csv(sClassFile)
+    dfLabel_top.to_csv(sClassFile, columns = ["nClass", "sClass", "nCount", "sDetail"])
     print("Classes(labels) saved to %s" % (sClassFile))
 
     # move video files
