@@ -119,7 +119,7 @@ def main():
 
     keModelOflow = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
-        nBatchSize = 16, nEpoch = 50, fLearn = 1e-2)
+        nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     return
     
