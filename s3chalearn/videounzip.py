@@ -13,6 +13,7 @@ import os
 import glob
 import shutil
 import zipfile
+import warnings
 
 from subprocess import call, check_output
 import time
@@ -112,19 +113,60 @@ def move_videos(sSourceDir, sTargetDir, fFrac = 0.2):
     return 
 
 
+def copy_videos(sSourceDir:str, sTargetDir:str, sClasses:str):
+    """ Assume: ... sSourceDir / class / video.avi
+    """
+    
+    # do not (partially) overwrite existing target directory
+    if os.path.exists(sTargetDir): 
+        warnings.warn("\nTarget folder " + sTargetDir + " alredy exists, copying stopped") 
+        return
+
+    dfClasses = pd.read_csv(sClasses)
+    print(dfClasses.sClass)
+
+    dfVideos = pd.DataFrame(sorted(glob.glob(sSourceDir + "/*/*.avi")), columns=["sVideoPath"])
+    print("Located %d videos in %s" % (len(dfVideos), sSourceDir))
+
+    #  restrict to selected classes
+    dfVideos.loc[:,"sLabel"] = dfVideos.sVideoPath.apply(lambda s: s.split("/")[-2])
+    liClasses = sorted(dfClasses.sClass)
+    dfVideos = dfVideos[dfVideos["sLabel"].isin(liClasses)]
+    print("Using only %d videos from %d classes" % (len(dfVideos), len(dfVideos.sLabel.unique())))
+
+    dfVideos.loc[:,"sFileName"] = dfVideos.sVideoPath.apply(lambda s: s.split("/")[-1])
+
+    nCount = 0
+    for _, seVideo in dfVideos.iterrows():
+        os.makedirs(sTargetDir + "/" + seVideo.sLabel, exist_ok = True)
+        sTargetPath = sTargetDir + "/" + seVideo.sLabel + "/" + seVideo.sFileName
+        shutil.copy(seVideo.sVideoPath, sTargetPath)
+
+        print("%5d video copied to %s" % (nCount, sTargetPath))
+        nCount += 1
+
+    print("Copied %d videos" % (nCount +1))
+    return
+
+
 def main():
    
     # directories
-    sVideoDir = "datasets/04-chalearn"
+    sVideoDir = "data-set/04-chalearn"
 
     print("\nStarting ChaLearn video unzip & move in directory:", os.getcwd())
 
     # unzip ChaLearn videos and sort them in folders=label
-    unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/train.zip", sVideoDir + "/_zip/train.txt")
-    unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/val.zip", sVideoDir + "/_zip/val.txt")
+    #unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/train.zip", sVideoDir + "/_zip/train.txt")
+    #unzip_sort_videos(sVideoDir, sVideoDir + "/_zip/val.zip", sVideoDir + "/_zip/val.txt")
 
     # move fraction of videos to another folder
     #move_videos(sVideoDir + "/train", sVideoDir + "/val", fFrac = 0.2)
+
+    # copy selected classes to new directory
+    sClassSelected = sVideoDir + "/010/class.csv"
+    copy_videos(sVideoDir + "/249/val",   sVideoDir + "/010/val",   sClassSelected)
+    copy_videos(sVideoDir + "/249/train", sVideoDir + "/010/train", sClassSelected)
 
     return
 

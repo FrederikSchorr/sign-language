@@ -50,6 +50,7 @@ def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0):
 	while True:
 		# grab the frame from the threaded video file stream
 		(bGrabbed, arFrame) = oStream.read()
+		if bGrabbed == False: continue
 
 		if nCountdown > 0:
 			fCountdown = fTimeTarget - time.time()
@@ -79,14 +80,14 @@ def video_capture(oStream, sColor, sText, nTimeDuration) -> np.array:
 	while True:
 		# grab the frame from the threaded video file stream
 		(bGrabbed, arFrame) = oStream.read()
-		#print(type(arFrame), arFrame.shape)
+		arFrame = cv2.flip(arFrame, 1)
 		liFrames.append(arFrame)
 
 		fTimeElapsed = time.time() - fTimeStart
 		s = sText + str(int(fTimeElapsed)+1) + " sec"
 
 		# paint rectangle & text, show the frame
-		arFrame = rectangle_text(cv2.flip(arFrame, 1), sColor, s)
+		arFrame = rectangle_text(arFrame, sColor, s)
 		cv2.imshow("Video", arFrame)
 	
 		# stop after nTimeDuration sec
@@ -113,10 +114,13 @@ def frame_show(oStream, sColor:str, sText:str):
 
 def unittest():
 	# open a pointer to the video stream
-	oStream = cv2.VideoCapture(0)
-	camera_resolution(oStream, 352, 288)
+	oStream = cv2.VideoCapture(1)
+	camera_resolution(oStream, 320, 240)
+	fFPS = 32.
+	oStream.set(cv2.CAP_PROP_FPS, fFPS)
 	#liFrames = []
 
+	print("Launch video capture screen ...")
 	# loop over action states
 	sResults = ""
 	while True:
@@ -138,13 +142,25 @@ def unittest():
 			time.sleep(3)
 			sResults = "Video duration {:.1f} sec, {} frames recorded, {:.1f} fps". \
 				format(fElapsed, len(liFrames), len(liFrames)/fElapsed)
+			print(sResults)
 
 			# ready for next video	
+
+		elif key == ord("+"):
+			fFPS *= 2.
+			print("Frame per second increased from %.1f to %.1f" % (oStream.get(cv2.CAP_PROP_FPS),fFPS))
+			oStream.set(cv2.CAP_PROP_FPS, fFPS)
+
+		elif key == ord("-"):
+			fFPS /= 2.
+			print("Frame per second decreased from %.1f to %.1f" % (oStream.get(cv2.CAP_PROP_FPS), fFPS))
+			oStream.set(cv2.CAP_PROP_FPS, fFPS)
 
 		# quit
 		elif key == ord('q'):
 			break
 
+		cv2.waitKey(1)
 
 	# do a bit of cleanup
 	oStream.release()

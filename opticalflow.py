@@ -14,6 +14,7 @@ import pandas as pd
 import cv2
 
 from frame import files2frames, video2frames, frames_show
+from videocapture import camera_resolution, video_show, video_capture, frame_show
 
 
 def frames2flows(arFrames:np.array(int), bThirdChannel:bool = False, fBound:float = 15.) -> np.array(int):
@@ -29,7 +30,7 @@ def frames2flows(arFrames:np.array(int), bThirdChannel:bool = False, fBound:floa
     # initialize with first frame
     arPrev = cv2.cvtColor(arFrames[0, ...], cv2.COLOR_BGR2GRAY)
 
-    #TVL1 = cv2.DualTVL1OpticalFlow_create(warps=1)
+    TVL1 = cv2.DualTVL1OpticalFlow_create(warps=1)
     if bThirdChannel: arZeros = np.zeros((h, w, 1), dtype = np.float32)
     liFlows = []
     # loop through all frames
@@ -38,9 +39,9 @@ def frames2flows(arFrames:np.array(int), bThirdChannel:bool = False, fBound:floa
         # get frame in black&white
         arFrame = cv2.cvtColor(arFrames[i, ...], cv2.COLOR_BGR2GRAY)
         # calc dense optical flow
-        ar_f_Flow = cv2.calcOpticalFlowFarneback(arPrev, arFrame, flow=None, 
-            pyr_scale=0.5, levels=1, winsize=15, iterations=2, poly_n=5, poly_sigma=1.1, flags=0)
-        #ar_f_Flow = TVL1.calc(arPrev, arFrame, None)
+        #ar_f_Flow = cv2.calcOpticalFlowFarneback(arPrev, arFrame, flow=None, 
+        #    pyr_scale=0.5, levels=1, winsize=15, iterations=2, poly_n=5, poly_sigma=1.1, flags=0)
+        ar_f_Flow = TVL1.calc(arPrev, arFrame, None)
 
         #print("flow %d: shape %s | type %s| min %f | max %f" % \
         #    (i, str(ar_fFlow.shape), str(type(ar_fFlow[0,0,0])), np.min(ar_fFlow), np.max(ar_fFlow)))
@@ -201,27 +202,70 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
     return
 
 
-def unittest():
+def unittest_fromfile():
     print("Unittest opticalflow functions ...")
 
     # read test video and show it
-    arFrames = video2frames("data-set/04-chalearn/train/c049/M_00831.avi", 240)
+    #arFrames = video2frames("data-set/04-chalearn/train/c049/M_00831.avi", 240)
+    arFrames = video2frames("data-set/01-ledasila/021/train/Banane/Banane---k---vid-20079---lsid-22591.mp4", 240)
+    print("Video frames %s" % str(arFrames.shape))
     frames_show(arFrames, 50)
 
     # calc flow and save to disc
     arFlows = frames2flows(arFrames)
-    flows2file(arFlows, "data-temp/unittest")
+    #flows2file(arFlows, "data-temp/unittest")
 
     # show color flows
     arFlowImages = flows2colorimages(arFlows)
     frames_show(arFlowImages, 50)  
 
     # read flows from directory and display
-    arFlows2 = file2flows("data-temp/unittest", b3channels=True)
-    print(arFlows2.shape, np.mean(arFlows2[:,:,:,2]))
-    frames_show(arFlows2, 50)
+    #arFlows2 = file2flows("data-temp/unittest", b3channels=True)
+    #print(arFlows2.shape, np.mean(arFlows2[:,:,:,2]))
+    #frames_show(arFlows2, 50)
 
     return
 
+
+def unittest_fromcamera():
+    oStream = cv2.VideoCapture(1) # 0 for the primary webcam
+    camera_resolution(oStream, nWidth=320, nHeight=240)
+
+    # loop over action states
+    print("Launch video capture screen ...")
+    while True:
+        # show live video and wait for key stroke
+        key = video_show(oStream, "green", "Press <blank> to start", "")
+        
+        # start!
+        if key == ord(' '):
+            # countdown n sec
+            video_show(oStream, "orange", "Recording starts in ", None, 3)
+            
+            # record video for n sec
+            fElapsed, arFrames = video_capture(oStream, "red", "Recording ", 5)
+            print("\nCaptured video: %.1f sec, %s, %.1f fps" % \
+                (fElapsed, str(arFrames.shape), len(arFrames)/fElapsed))
+
+            # show orange wait box
+            frame_show(oStream, "orange", "Calculating optical flow ...")
+            arFlows = frames2flows(arFrames, bThirdChannel=True)
+            frames_show(flows2colorimages(arFlows), 30)    
+
+        elif key == ord('f'):
+            unittest_fromfile()
+
+        # quit
+        elif key == ord('q'):
+            break
+
+    # do a bit of cleanup
+    oStream.release()
+    cv2.destroyAllWindows()
+
+
+    return
+
+
 if __name__ == '__main__':
-    unittest()
+    unittest_fromcamera()

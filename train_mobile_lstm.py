@@ -37,10 +37,14 @@ def lstm_load(sPath:str, nFramesNorm:int, nFeatureLength:int, nClasses:int) -> k
     print("Load trained LSTM model from %s" % sPath)
     keModel = keras.models.load_model(sPath)
 
-    if keModel.input_shape != (None, nFramesNorm, nFeatureLength):
+    tuInputShape = keModel.input_shape[1:]
+    if tuInputShape != (nFramesNorm, nFeatureLength):
         raise ValueError("Unexpected LSTM input shape")
-    if keModel.output_shape != (None, nClasses):
+    tuOutputShape = keModel.output_shape[1:]
+    if tuOutputShape != (nClasses, ):
         raise ValueError("Unexpected LSTM output shape")
+
+    print("Expected input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
 
     return keModel
 
