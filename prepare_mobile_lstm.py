@@ -21,10 +21,20 @@ from feature_2D import features_2D_load_model, features_2D_predict_generator
 
 def main():
 
-    # important constants
-    nClasses = 10   # number of classes
-    nFrames = 64    # number of frames per video
-    nMinDim = 240   # smaller dimension of saved video-frames 
+    # dataset
+    diVideoSet = {"sName" : "04-chalearn",
+        "nClasses" : 10,   # number of classes
+        "nFramesNorm" : 40,    # number of frames per video
+        "nMinDim" : 240,   # smaller dimension of saved video-frames
+        "tuShape" : (240, 320), # height, width
+        "nFpsAvg" : 10,
+        "nFramesAvg" : 50, 
+        "fDurationAvG" : 5.0} # seconds 
+    #diVideoSet = {"sName" : "01-ledasila",
+    #    "tuShape" : (288, 352), # height, width
+    #    "nFPS" : 25,
+    #    "nFrames" : 75,
+    #    "fDuration" : 3.0} # seconds
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -35,27 +45,18 @@ def main():
     #    "nOutput" : 2048}
 
     # directories
-    sClassFile       = "data-set/04-chalearn/%03d/class.csv"%(nClasses)
-    sVideoDir        = "data-set/04-chalearn/%03d"%(nClasses)
-    sImageDir        = "data-temp/04-chalearn/%03d/image"%(nClasses)
-    sImageFeatureDir = "data-temp/04-chalearn/%03d/image-mobilenet"%(nClasses)
-    sOflowDir        = "data-temp/04-chalearn/%03d/otvl1"%(nClasses)
-    sOflowFeatureDir = "data-temp/04-chalearn/%03d/otvl1-mobilenet"%(nClasses)
-
-    """
-    sClassFile       = "data-set/01-ledasila/%03d/class.csv"%(nClasses)
-    sVideoDir        = "data-set/01-ledasila/%03d"%(nClasses)
-    sImageDir        = "data-temp/01-ledasila/%03d/image"%(nClasses)
-    sImageFeatureDir = "data-temp/01-ledasila/%03d/image-mobilenet"%(nClasses)
-    sOflowDir        = "data-temp/01-ledasila/%03d/oflow"%(nClasses)
-    sOflowFeatureDir = "data-temp/01-ledasila/%03d/oflow-mobilenet"%(nClasses)
-    """
+    sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sImageDir        = "data-temp/%s/%03d/image"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sImageFeatureDir = "data-temp/%s/%03d/image-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sOflowDir        = "data-temp/%s/%03d/otvl1"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sOflowFeatureDir = "data-temp/%s/%03d/otvl1-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
 
     print("Extracting frames, optical flow and MobileNet features ...")
     print(os.getcwd())
     
     # extract frames from videos
-    videosDir2framesDir(sVideoDir, sImageDir, nMinDim)
+    videosDir2framesDir(sVideoDir, sImageDir, diVideoSet["nMinDim"])
 
     # calculate optical flow
     framesDir2flowsDir(sImageDir, sOflowDir)
@@ -64,12 +65,12 @@ def main():
     keModel = features_2D_load_model(diFeature)
 
     # calculate MobileNet features from rgb frames
-    features_2D_predict_generator(sImageDir + "/val",   sImageFeatureDir + "/val",   keModel, nFrames)
-    features_2D_predict_generator(sImageDir + "/train", sImageFeatureDir + "/train", keModel, nFrames)
+    features_2D_predict_generator(sImageDir + "/val",   sImageFeatureDir + "/val",   keModel, diVideoSet["nFramesNorm"])
+    features_2D_predict_generator(sImageDir + "/train", sImageFeatureDir + "/train", keModel, diVideoSet["nFramesNorm"])
 
     # calculate MobileNet features from optical flow
-    features_2D_predict_generator(sOflowDir + "/val",   sOflowFeatureDir + "/val",   keModel, nFrames)
-    features_2D_predict_generator(sOflowDir + "/train", sOflowFeatureDir + "/train", keModel, nFrames)
+    features_2D_predict_generator(sOflowDir + "/val",   sOflowFeatureDir + "/val",   keModel, diVideoSet["nFramesNorm"])
+    features_2D_predict_generator(sOflowDir + "/train", sOflowFeatureDir + "/train", keModel, diVideoSet["nFramesNorm"])
 
     return
 

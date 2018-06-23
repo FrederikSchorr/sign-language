@@ -38,9 +38,10 @@ def images_resize_aspectratio(arImages: np.array, nMinDim:int = 256) -> np.array
     
 
 def video2frames(sVideoPath:str, nMinDim:int) -> np.array:
-    """ Read video file with OpenCV (with 25 fps) and return array of frames
+    """ Read video file with OpenCV and return array of frames
+    The frame rate depends on the video (and cannot be set)
 
-    if nMinDim == True: Frames are resized preserving aspect ratio 
+    if nMinDim != None: Frames are resized preserving aspect ratio 
         so that the smallest dimension is eg 256 pixels, with bilinear interpolation
     """
     
@@ -171,6 +172,10 @@ def frames_show(arFrames:np.array, nWaitMilliSec:int = 100):
     return
 
 
+def video_length(sVideoPath:str) -> float:
+    return int(check_output(["mediainfo", '--Inform=Video;%Duration%', sVideoPath]))/1000.0
+
+
 def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = None):
     """ Extract frames from videos 
     
@@ -204,7 +209,7 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = No
     for sVideoPath in dfVideos.sVideoPath:
 
         # slice videos into frames with OpenCV
-        arFrames = video2frames(sVideoPath, nMinDim)
+        arFrames = video2frames(sVideoPath, 25, nMinDim)
         
         # create diretory (assumed directories see above)
         li_sVideoPath = sVideoPath.split("/")
@@ -214,38 +219,50 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = No
         os.makedirs(sTargetDir, exist_ok=True)
 
         # write frames to .jpg files
-        frames2files(arFrames, sTargetDir)            
+        frames2files(arFrames, sTargetDir)
 
-        print("Video %5d to frames %s in %s" % (nCounter, str(arFrames.shape), sTargetDir))
+        # length and fps
+        fVideoSec = video_length(sVideoPath)
+        fFPS = arFrames.shape[0] / fVideoSec            
+
+        print("Video %5d (%.1f sec) to frames %s (%.1f fps) in %s" % (nCounter, fVideoSec, str(arFrames.shape), fFPS, sTargetDir))
         nCounter += 1      
 
     return
 
 
-def unittest():
-    sVideoDir = "data-set/01-ledasila/021/train"
-
-    print("\nAnalyze video durations and fps ...")
+def unittest(sVideoDir, nSamples = 100):
+    print("\nAnalyze video durations and fps from %s ..." % (sVideoDir))
     print(os.getcwd())
 
     liVideos = glob.glob(sVideoDir + "/*/*.mp4") + glob.glob(sVideoDir + "/*/*.avi")
+    
     if len(liVideos) == 0: raise ValueError("No videos detected")
 
-    for i in range(40):
+    fVideoSec_sum, nFrames_sum = 0, 0
+    for i in range(nSamples):
         sVideoPath = random.choice(liVideos)
         #print("Video %s" % sVideoPath)
 
         # read video
-        arFrames = video2frames(sVideoPath, 256, i)
+        arFrames = video2frames(sVideoPath, 256)
         nFrames = len(arFrames)
 
         # determine length of video in sec and deduce frame rate
-        fVideoSec = int(check_output(["mediainfo", '--Inform=Video;%Duration%', sVideoPath]))/1000.0
+        fVideoSec = video_length(sVideoPath)
         fFPS = nFrames / fVideoSec
 
+        fVideoSec_sum += fVideoSec
+        nFrames_sum += nFrames
+
         print("%2d: Shape %s, duration %.1f sec, fps %.1f" % (i, str(arFrames.shape), fVideoSec, fFPS))
+
+    nCount = i+1
+    print("%d samples: Average video duration %.1f sec, fps %.1f" % (nSamples, fVideoSec_sum / nCount, nFrames_sum / fVideoSec_sum))
 
     return
 
 if __name__ == '__main__':
-    unittest()
+
+    unittest("data-set/01-ledasila/021/train", 100)
+    unittest("data-set/04-chalearn/010/train", 100)

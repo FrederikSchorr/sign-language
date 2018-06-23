@@ -214,6 +214,12 @@ class VideoClasses():
     def __init__(self, sClassFile:str):
         # load label description: index, sClass, sLong, sCat, sDetail
         self.dfClass = pd.read_csv(sClassFile)
+
+        # sort the classes
+        self.dfClass = self.dfClass.sort_values("sClass").reset_index(drop=True)
+        
         self.liClasses = list(self.dfClass.sClass)
         self.nClasses = len(self.dfClass)
+
+        print("Loaded %d classes from %s" % (self.nClasses, sClassFile))
         return

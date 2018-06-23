@@ -58,13 +58,14 @@ def features_2D_load_model(diFeature:dict) -> keras.Model:
 
     # check input & output dimensions
     tuInputShape = keModel.input_shape[1:]
+    tuOutputShape = keModel.output_shape[1:]
+    print("Expected input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
+
     if tuInputShape != diFeature["tuInputShape"]:
         raise ValueError("Unexpected input shape")
-    tuOutputShape = keModel.output_shape[1:]
     if tuOutputShape != diFeature["tuOutputShape"]:
         raise ValueError("Unexpected output shape")
 
-    print("Expected input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
     return keModel
 
 

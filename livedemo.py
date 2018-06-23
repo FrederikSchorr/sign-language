@@ -49,9 +49,15 @@ def predict_frames(arFrames:np.array, keFeature, keLSTM, oClasses:VideoClasses) 
 
 def main():
 	
-	# important constants
-	nClasses = 21   	# number of classes
-	nFramesNorm = 20    # number of frames per video
+	# dataset
+	diVideoSet = {"sName" : "04-chalearn",
+		"nClasses" : 10,   # number of classes
+		"nFramesNorm" : 40,    # number of frames per video
+		"nMinDim" : 240,   # smaller dimension of saved video-frames
+		"tuShape" : (240, 320), # height, width
+		"nFpsAvg" : 10,
+		"nFramesAvg" : 50, 
+		"fDurationAvG" : 5.0} # seconds 
 
 	# feature extractor 
 	diFeature = {"sName" : "mobilenet",
@@ -60,11 +66,13 @@ def main():
 	}
 
 	# files
-	sClassFile	= "data-set/01-ledasila/%03d/class.csv"%(nClasses)
-	sVideoDir   = "data-set/01-ledasila/%03d"%(nClasses)
-	sModelFile 	= "model/20180620-1701-ledasila021-oflow-mobile-lstm-best.h5"
+	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
+	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
+	sModelFile 		 = "model/20180620-1701-ledasila021-oflow-mobile-lstm-best.h5"
 
-	print("\nStarting gesture recognition live demo from " + os.getcwd())
+	print("\nStarting gesture recognition live demo ... ")
+	print(os.getcwd())
+	print(diVideoSet)
 	
 	# load label description
 	oClasses = VideoClasses(sClassFile)
@@ -74,15 +82,16 @@ def main():
 	h, w, c = diFeature["tuInputShape"]
 
 	# Load trained LSTM network
-	keLSTM = lstm_load(sModelFile, nFramesNorm, diFeature["tuOutputShape"][0], oClasses.nClasses)
+	keLSTM = lstm_load(sModelFile, diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses)
 
 	# open a pointer to the webcam video stream
 	oStream = cv2.VideoCapture(1) # 0 for the primary webcam
 	camera_resolution(oStream, nWidth=320, nHeight=240)
-	oStream.set(cv2.CAP_PROP_FPS, 25)
 
-	h, w, _ = diFeature["tuInputShape"]
-	liVideos = glob.glob(sVideoDir + "/train/*/*.*")
+	# try to set camera frame rate (close) to training data
+	oStream.set(cv2.CAP_PROP_FPS, diVideoSet["nFpsAvg"])
+
+	liVideosDebug = glob.glob(sVideoDir + "/train/*/*.*")
 	nCount = 0
 	sResults = ""
 	# loop over action states
@@ -114,7 +123,7 @@ def main():
 
 		# debug
 		elif key == ord('d'):
-			sVideoFile = random.choice(liVideos)
+			sVideoFile = random.choice(liVideosDebug)
 			arFrames = video2frames(sVideoFile, 256)
 			print("DEBUG: Loaded %s | shape %s" % (sVideoFile, str(arFrames.shape)))
 			frames_show(arFrames, 35)

@@ -191,7 +191,7 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
 
         # retrieve frame files - in ascending order
         arFrames = files2frames(sFrameBaseDir + "/" + sFrameDir)
-        print("%5d | Calculating optical flow from %3d frames to %s" % (nCounter, arFrames.shape[0], sFlowDir))
+        print("%5d | Calculating optical flow from %s frames to %s" % (nCounter, str(arFrames.shape), sFlowDir))
 
         # calculate and save optical flow
         arFlows = frames2flows(arFrames)

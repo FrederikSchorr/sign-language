@@ -34,17 +34,18 @@ def lstm_build(nFramesNorm:int, nFeatureLength:int, nClasses:int, fDropout:float
 
 def lstm_load(sPath:str, nFramesNorm:int, nFeatureLength:int, nClasses:int) -> keras.Model:
 
-    print("Load trained LSTM model from %s" % sPath)
+    print("Load trained LSTM model from %s ..." % sPath)
     keModel = keras.models.load_model(sPath)
-
+    
     tuInputShape = keModel.input_shape[1:]
+    tuOutputShape = keModel.output_shape[1:]
+    print("Expected input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
+
     if tuInputShape != (nFramesNorm, nFeatureLength):
         raise ValueError("Unexpected LSTM input shape")
-    tuOutputShape = keModel.output_shape[1:]
     if tuOutputShape != (nClasses, ):
         raise ValueError("Unexpected LSTM output shape")
 
-    print("Expected input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
 
     return keModel
 
@@ -92,9 +93,20 @@ def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.
 
 def main():
    
-    # important constants
-    nClasses = 21   # number of classes
-    nFrames = 20    # number of frames per video
+    # dataset
+    diVideoSet = {"sName" : "04-chalearn",
+        "nClasses" : 10,   # number of classes
+        "nFramesNorm" : 40,    # number of frames per video
+        "nMinDim" : 240,   # smaller dimension of saved video-frames
+        "tuShape" : (240, 320), # height, width
+        "nFpsAvg" : 10,
+        "nFramesAvg" : 50, 
+        "fDurationAvG" : 5.0} # seconds 
+    #diVideoSet = {"sName" : "01-ledasila",
+    #    "tuShape" : (288, 352), # height, width
+    #    "nFPS" : 25,
+    #    "nFrames" : 75,
+    #    "fDuration" : 3.0} # seconds
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -105,16 +117,16 @@ def main():
     #    "nOutput" : 2048}
 
     # directories
-    sClassFile       = "data-set/01-ledasila/%03d/class.csv"%(nClasses)
-    sVideoDir        = "data-set/01-ledasila/%03d"%(nClasses)
-    sImageDir        = "data-temp/01-ledasila/%03d/image"%(nClasses)
-    sImageFeatureDir = "data-temp/01-ledasila/%03d/image-mobilenet"%(nClasses)
-    sOflowDir        = "data-temp/01-ledasila/%03d/oflow"%(nClasses)
-    sOflowFeatureDir = "data-temp/01-ledasila/%03d/oflow-mobilenet"%(nClasses)
+    sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sImageDir        = "data-temp/%s/%03d/image"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sImageFeatureDir = "data-temp/%s/%03d/image-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sOflowDir        = "data-temp/%s/%03d/otvl1"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sOflowFeatureDir = "data-temp/%s/%03d/otvl1-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
 
     sModelDir        = "model"
 
-    print("\nStarting training on LedaSila data with MobileNet + LSTM ...")
+    print("\nStarting training on with MobileNet + LSTM ...")
     print(os.getcwd())
 
     # read the classes
@@ -122,19 +134,19 @@ def main():
 
     # Image: Load LSTM and train it
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
-        "-ledasila%03d-image-mobile-lstm.csv"%(nClasses)
+        "-%s%03d-image-mobile-lstm.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
     print("Image log: %s" % sLogPath)
 
-    keModelImage = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
+    keModelImage = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train_generator(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
         nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     # Oflow: Load LSTM and train it
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
-        "-ledasila%03d-oflow-mobile-lstm.csv"%(nClasses)
+        "-%s%03d-otvl1-mobile-lstm.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
     print("Optical flow log: %s" % sLogPath)
 
-    keModelOflow = lstm_build(nFrames, diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
+    keModelOflow = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train_generator(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
         nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
