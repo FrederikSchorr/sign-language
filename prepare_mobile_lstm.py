@@ -19,22 +19,7 @@ from opticalflow import framesDir2flowsDir
 from feature_2D import features_2D_load_model, features_2D_predict_generator
 
 
-def main():
-
-    # dataset
-    diVideoSet = {"sName" : "04-chalearn",
-        "nClasses" : 10,   # number of classes
-        "nFramesNorm" : 40,    # number of frames per video
-        "nMinDim" : 240,   # smaller dimension of saved video-frames
-        "tuShape" : (240, 320), # height, width
-        "nFpsAvg" : 10,
-        "nFramesAvg" : 50, 
-        "fDurationAvG" : 5.0} # seconds 
-    #diVideoSet = {"sName" : "01-ledasila",
-    #    "tuShape" : (288, 352), # height, width
-    #    "nFPS" : 25,
-    #    "nFrames" : 75,
-    #    "fDuration" : 3.0} # seconds
+def prepare_mobile_lstm(diVideoSet):
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -76,4 +61,19 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    
+    diVideoSet = {"sName" : "04-chalearn",
+        "nClasses" : 10,   # number of classes
+        "nFramesNorm" : 40,    # number of frames per video
+        "nMinDim" : 240,   # smaller dimension of saved video-frames
+        "tuShape" : (240, 320), # height, width
+        "nFpsAvg" : 10,
+        "nFramesAvg" : 50, 
+        "fDurationAvG" : 5.0} # seconds 
+    #diVideoSet = {"sName" : "01-ledasila",
+    #    "tuShape" : (288, 352), # height, width
+    #    "nFPS" : 25,
+    #    "nFrames" : 75,
+    #    "fDuration" : 3.0} # seconds
+
+    prepare_mobile_lstm(diVideoSet)

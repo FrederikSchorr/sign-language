@@ -39,13 +39,12 @@ def lstm_load(sPath:str, nFramesNorm:int, nFeatureLength:int, nClasses:int) -> k
     
     tuInputShape = keModel.input_shape[1:]
     tuOutputShape = keModel.output_shape[1:]
-    print("Expected input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
+    print("Loaded input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
 
     if tuInputShape != (nFramesNorm, nFeatureLength):
         raise ValueError("Unexpected LSTM input shape")
     if tuOutputShape != (nClasses, ):
         raise ValueError("Unexpected LSTM output shape")
-
 
     return keModel
 
@@ -91,22 +90,7 @@ def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.
     return
 
 
-def main():
-   
-    # dataset
-    diVideoSet = {"sName" : "04-chalearn",
-        "nClasses" : 10,   # number of classes
-        "nFramesNorm" : 40,    # number of frames per video
-        "nMinDim" : 240,   # smaller dimension of saved video-frames
-        "tuShape" : (240, 320), # height, width
-        "nFpsAvg" : 10,
-        "nFramesAvg" : 50, 
-        "fDurationAvG" : 5.0} # seconds 
-    #diVideoSet = {"sName" : "01-ledasila",
-    #    "tuShape" : (288, 352), # height, width
-    #    "nFPS" : 25,
-    #    "nFrames" : 75,
-    #    "fDuration" : 3.0} # seconds
+def train_mobile_lstm():
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -154,4 +138,19 @@ def main():
     
     
 if __name__ == '__main__':
-    main()
+
+    diVideoSet = {"sName" : "04-chalearn",
+        "nClasses" : 10,   # number of classes
+        "nFramesNorm" : 40,    # number of frames per video
+        "nMinDim" : 240,   # smaller dimension of saved video-frames
+        "tuShape" : (240, 320), # height, width
+        "nFpsAvg" : 10,
+        "nFramesAvg" : 50, 
+        "fDurationAvG" : 5.0} # seconds 
+    #diVideoSet = {"sName" : "01-ledasila",
+    #    "tuShape" : (288, 352), # height, width
+    #    "nFPS" : 25,
+    #    "nFrames" : 75,
+    #    "fDuration" : 3.0} # seconds
+
+    train_mobile_lstm(diVideoSet)

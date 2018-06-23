@@ -10,7 +10,8 @@ import pandas as pd
 
 import cv2
 
-from frame import video2frames, images_normalize, frames_downsample, images_crop, images_resize_aspectratio, frames_show, frames2files, files2frames
+from frame import video2frames, images_normalize, frames_downsample, images_crop
+from frame import images_resize_aspectratio, frames_show, frames2files, files2frames, video_length
 from videocapture import camera_resolution, frame_show, video_show, video_capture
 from opticalflow import frames2flows, flows2colorimages, flows2file
 from datagenerator import VideoClasses
@@ -31,7 +32,7 @@ def predict_frames(arFrames:np.array, keFeature, keLSTM, oClasses:VideoClasses) 
 	# Translate frames to flows - these are already scaled between [-1.0, 1.0]
 	print("Calculate optical flow ...")
 	arFlows = frames2flows(arFrames, bThirdChannel = True)
-	frames_show(flows2colorimages(arFlows), 35)
+	frames_show(flows2colorimages(arFlows), int(5000 / len(arFlows)))
 
 	# downsample
 	arFlows = frames_downsample(arFlows, nFramesNorm)
@@ -68,7 +69,7 @@ def main():
 	# files
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
-	sModelFile 		 = "model/20180620-1701-ledasila021-oflow-mobile-lstm-best.h5"
+	sModelFile 		 = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
 
 	print("\nStarting gesture recognition live demo ... ")
 	print(os.getcwd())
@@ -122,11 +123,11 @@ def main():
 			# ready for next video	
 
 		# debug
-		elif key == ord('d'):
+		elif key == ord('f'):
 			sVideoFile = random.choice(liVideosDebug)
 			arFrames = video2frames(sVideoFile, 256)
 			print("DEBUG: Loaded %s | shape %s" % (sVideoFile, str(arFrames.shape)))
-			frames_show(arFrames, 35)
+			frames_show(arFrames, int(video_length(sVideoFile)*1000 / len(arFrames)))
 			nLabel, sLabel, fProba = predict_frames(arFrames, keFeature, keLSTM, oClasses)
 			sResults = "Identified sign: [%d] %s (confidence %.0f%%)" % (nLabel, sLabel, fProba*100.)
 

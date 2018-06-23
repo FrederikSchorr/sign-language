@@ -35,10 +35,12 @@ def predict(arFeatures:np.array(float), keModel:keras.Model, oClasses:VideoClass
 
 
     for i in range(nTop):
+        sClass = oClasses.dfClass.sClass[arTopLabels[i]] + " " + oClasses.dfClass.sDetail[arTopLabels[i]]
         print("Top %d: [%3d] %s (confidence %.0f%%)" % \
-            (i+1, arTopLabels[i], oClasses.dfClass.sClass[arTopLabels[i]], arTopProbas[i]*100.))
-
-    return arTopLabels[0], oClasses.dfClass.sClass[arTopLabels[0]], arTopProbas[0]
+            (i+1, arTopLabels[i], sClass, arTopProbas[i]*100.))
+        
+    sClass = oClasses.dfClass.sClass[arTopLabels[0]] + " " + oClasses.dfClass.sDetail[arTopLabels[0]]
+    return arTopLabels[0], sClass, arTopProbas[0]
 
 
 
