@@ -209,7 +209,7 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = No
     for sVideoPath in dfVideos.sVideoPath:
 
         # slice videos into frames with OpenCV
-        arFrames = video2frames(sVideoPath, 25, nMinDim)
+        arFrames = video2frames(sVideoPath, nMinDim)
         
         # create diretory (assumed directories see above)
         li_sVideoPath = sVideoPath.split("/")
