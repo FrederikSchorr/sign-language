@@ -90,7 +90,7 @@ def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.
     return
 
 
-def train_mobile_lstm():
+def train_mobile_lstm(diVideoSet):
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -123,7 +123,7 @@ def train_mobile_lstm():
 
     keModelImage = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train_generator(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
-        nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
+        nBatchSize = 16, nEpoch = 200, fLearn = 1e-4)
 
     # Oflow: Load LSTM and train it
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
@@ -132,7 +132,7 @@ def train_mobile_lstm():
 
     keModelOflow = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train_generator(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
-        nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
+        nBatchSize = 16, nEpoch = 200, fLearn = 1e-4)
 
     return
     
