@@ -109,6 +109,23 @@ def frames_downsample(arFrames:np.array, nFramesTarget:int) -> np.array:
     return np.array(liTarget)
     
     
+def image_crop(arFrame, nHeightTarget, nWidthTarget) -> np.array:
+    """ crop 1 frame to specified size, choose centered image
+    """
+    nHeight, nWidth, _ = arFrame.shape
+
+    if (nHeight < nHeightTarget) or (nWidth < nWidthTarget):
+        raise ValueError("Image height/width too small to crop to target size")
+
+    # calc left upper corner
+    sX = int(nWidth/2 - nWidthTarget/2)
+    sY = int(nHeight/2 - nHeightTarget/2)
+
+    arFrame = arFrame[sY:sY+nHeightTarget, sX:sX+nWidthTarget, :]
+
+    return arFrame
+
+
 def images_crop(arFrames:np.array, nHeightTarget, nWidthTarget) -> np.array:
     """ crop each frame in array to specified size, choose centered image
     """

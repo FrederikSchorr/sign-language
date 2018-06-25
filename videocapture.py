@@ -5,7 +5,10 @@ import numpy as np
 
 import cv2
 
-#from frame import resize_aspectratio
+from timer import Timer
+from frame import image_crop, images_crop
+from opticalflow import OpticalFlow, frames2flows, flow2colorimage
+
 
 def camera_resolution(oStream, nWidth, nHeight):
 	oStream.set(3, nWidth)
@@ -13,34 +16,38 @@ def camera_resolution(oStream, nWidth, nHeight):
 	return
 
 
-def rectangle_text(oFrame, sColor, sUpper, sLower = None, fBoxSize = 0.8):
+def rectangle_text(arImage, sColor, sUpper, sLower = None, tuRectangle = (224, 224)):
+	""" Returns new image (not altering arImage)
+	"""
 
-	nHeigth, nWidth, _ = oFrame.shape
-	x1 = int(nWidth * (1.0 - fBoxSize) / 2)
-	y1 = int(nHeigth * (1.0 - fBoxSize) / 2)
+	nHeigth, nWidth, _ = arImage.shape
+	nRectHeigth, nRectWidth = tuRectangle
+	x1 = int((nWidth - nRectWidth) / 2)
+	y1 = int((nHeigth - nRectHeigth) / 2)
 
 	if sColor == "green": bgr = (84, 175, 25)
 	elif sColor == "orange": bgr = (60, 125, 235)
 	else: #sColor == "red": 
 		bgr = (27, 13, 252)
 
-	cv2.rectangle(oFrame, (x1, y1), (nWidth-x1, nHeigth-y1), bgr, 3)
+	arImageNew = np.copy(arImage)
+	cv2.rectangle(arImageNew, (x1, y1), (nWidth-x1, nHeigth-y1), bgr, 3)
 
 	# display a text to the frame 
 	font = cv2.FONT_HERSHEY_SIMPLEX
 	fFontSize = 0.7
 	textSize = cv2.getTextSize(sUpper, font, 1.0, 2)[0]
-	cv2.putText(oFrame, sUpper, (x1 + 10, y1 + textSize[1] + 10), font, fFontSize, bgr, 2)	
+	cv2.putText(arImageNew, sUpper, (x1 + 10, y1 + textSize[1] + 10), font, fFontSize, bgr, 2)	
 
 	# 2nd text
 	if (sLower != None):
 		textSize = cv2.getTextSize(sLower, font, 1.0, 2)[0]
-		cv2.putText(oFrame, sLower, (x1 + 10, nHeigth - y1 - 10), font, fFontSize, bgr, 2)
+		cv2.putText(arImageNew, sLower, (x1 + 10, nHeigth - y1 - 10), font, fFontSize, bgr, 2)
 
-	return oFrame
+	return arImageNew
 
 
-def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0): 
+def video_show(oStream, sColor, sUpper, sLower = None, tuRectangle = (224, 224), nCountdown = 0): 
 	
 	if nCountdown > 0: 
 		fTimeTarget = time.time() + nCountdown
@@ -57,7 +64,7 @@ def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0):
 			s = sUpper + str(int(fCountdown)+1) + " sec"
 
 		# paint rectangle & text, show the (mirrored) frame
-		arFrame = rectangle_text(cv2.flip(arFrame, 1), sColor, s, sLower)
+		arFrame = rectangle_text(cv2.flip(arFrame, 1), sColor, s, sLower, tuRectangle)
 		cv2.imshow("Video", arFrame)
 	
 		# stop after countdown
@@ -71,9 +78,14 @@ def video_show(oStream, sColor, sUpper, sLower = None, nCountdown = 0):
 	return key
 
 
-def video_capture(oStream, sColor, sText, nTimeDuration) -> np.array:
+def video_capture(oStream, sColor, sText, tuRectangle = (224, 224), nTimeDuration = 3, bOpticalFlow = False) -> \
+	(float, np.array, np.array):
+	
+	if bOpticalFlow:
+		oOpticalFlow = OpticalFlow(bThirdChannel = True)
 
 	liFrames = []
+	liFlows = []
 	fTimeStart = time.time()
 
 	# loop over frames from the video file stream
@@ -87,9 +99,15 @@ def video_capture(oStream, sColor, sText, nTimeDuration) -> np.array:
 		s = sText + str(int(fTimeElapsed)+1) + " sec"
 
 		# paint rectangle & text, show the frame
-		arFrame = rectangle_text(arFrame, sColor, s)
-		cv2.imshow("Video", arFrame)
-	
+		arFrameText = rectangle_text(arFrame, sColor, s, "", tuRectangle)
+		cv2.imshow("Video", arFrameText)
+
+		# display optical flow
+		if bOpticalFlow:
+			arFlow = oOpticalFlow.next(image_crop(arFrame, *tuRectangle))
+			liFlows.append(arFlow)
+			cv2.imshow("Optical flow", flow2colorimage(arFlow))
+
 		# stop after nTimeDuration sec
 		if fTimeElapsed >= nTimeDuration: break
 
@@ -98,14 +116,15 @@ def video_capture(oStream, sColor, sText, nTimeDuration) -> np.array:
 		if key == ord('q'): break
 		cv2.waitKey(1)
 
-	return fTimeElapsed, np.array(liFrames)
+	return fTimeElapsed, np.array(liFrames), np.array(liFlows)
 
 
-def frame_show(oStream, sColor:str, sText:str):
+
+def frame_show(oStream, sColor:str, sText:str, tuRectangle = (224, 224)):
 	""" Read frame from webcam and display it with box+text """
 
 	(bGrabbed, oFrame) = oStream.read()
-	oFrame = rectangle_text(cv2.flip(oFrame, 1), sColor, sText)
+	oFrame = rectangle_text(cv2.flip(oFrame, 1), sColor, sText, "", tuRectangle)
 	cv2.imshow("Video", oFrame)
 	cv2.waitKey(1)
 
@@ -114,7 +133,7 @@ def frame_show(oStream, sColor:str, sText:str):
 
 def unittest():
 	# open a pointer to the video stream
-	oStream = cv2.VideoCapture(1)
+	oStream = cv2.VideoCapture(0)
 	camera_resolution(oStream, 320, 240)
 	fFPS = 32.
 	oStream.set(cv2.CAP_PROP_FPS, fFPS)
@@ -169,5 +188,54 @@ def unittest():
 	return
 
 
+def unittest_opticalflow_fromcamera():
+
+    timer = Timer()
+
+    # start video capture from webcam
+    oStream = cv2.VideoCapture(0) # 0 for the primary webcam, 1 for external webcam
+    camera_resolution(oStream, nWidth=320, nHeight=240)
+
+    # loop over action states
+    print("Launch video capture screen ...")
+    while True:
+        # show live video and wait for key stroke
+        key = video_show(oStream, "green", "Press <blank> to start", "")
+        
+        # start!
+        if key == ord(' '):
+            # countdown n sec
+            video_show(oStream, "orange", "Recording starts in ", sLower = None, \
+				tuRectangle = (224, 224), nCountdown = 3)
+            
+            # record video for n sec
+            fElapsed, arFrames, arFlows = video_capture(oStream, "red", "Recording ", \
+				tuRectangle = (224, 224), nTimeDuration = 5, bOpticalFlow=True)
+            print("\nCaptured video: %.1f sec, %s, %.1f fps" % \
+                (fElapsed, str(arFrames.shape), len(arFrames)/fElapsed))
+
+            # show orange wait box
+            frame_show(oStream, "orange", "Calculating optical flow ...")
+            arFrames = images_crop(arFrames, 224, 224)
+            timer.start()
+            arFlows = frames2flows(arFrames, bThirdChannel=True)
+            print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
+
+            #frames_show(flows2colorimages(arFlows), 30)    
+
+        elif key == ord('f'):
+            unittest_fromfile()
+
+        # quit
+        elif key == ord('q'):
+            break
+
+    # do a bit of cleanup
+    oStream.release()
+    cv2.destroyAllWindows()
+
+    return
+
+
 if __name__ == '__main__':
-    unittest()
+    unittest_opticalflow_fromcamera()

@@ -36,7 +36,7 @@ def predict(arFeatures:np.array(float), keModel:keras.Model, oClasses:VideoClass
 
     for i in range(nTop):
         sClass = oClasses.dfClass.sClass[arTopLabels[i]] + " " + oClasses.dfClass.sDetail[arTopLabels[i]]
-        print("Top %d: [%3d] %s (confidence %.0f%%)" % \
+        print("Top %d: [%3d] %s (confidence %.1f%%)" % \
             (i+1, arTopLabels[i], sClass, arTopProbas[i]*100.))
         
     sClass = oClasses.dfClass.sClass[arTopLabels[0]] + " " + oClasses.dfClass.sDetail[arTopLabels[0]]

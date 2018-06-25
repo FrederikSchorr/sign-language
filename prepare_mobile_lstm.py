@@ -69,11 +69,6 @@ if __name__ == '__main__':
         "tuShape" : (240, 320), # height, width
         "nFpsAvg" : 10,
         "nFramesAvg" : 50, 
-        "fDurationAvG" : 5.0} # seconds 
-    #diVideoSet = {"sName" : "01-ledasila",
-    #    "tuShape" : (288, 352), # height, width
-    #    "nFPS" : 25,
-    #    "nFrames" : 75,
-    #    "fDuration" : 3.0} # seconds
+        "fDurationAvg" : 5.0} # seconds 
 
     prepare_mobile_lstm(diVideoSet)

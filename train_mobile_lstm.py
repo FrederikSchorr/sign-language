@@ -123,7 +123,7 @@ def train_mobile_lstm(diVideoSet):
 
     keModelImage = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train_generator(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
-        nBatchSize = 16, nEpoch = 200, fLearn = 1e-4)
+        nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     # Oflow: Load LSTM and train it
     sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
@@ -132,13 +132,23 @@ def train_mobile_lstm(diVideoSet):
 
     keModelOflow = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
     train_generator(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
-        nBatchSize = 16, nEpoch = 200, fLearn = 1e-4)
+        nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     return
     
     
 if __name__ == '__main__':
 
+    diVideoSet = {"sName" : "01-ledasila",
+        "nClasses" : 21,   # number of classes
+        "nFramesNorm" : 64,    # number of frames per video
+        "nMinDim" : 240,   # smaller dimension of saved video-frames
+        "tuShape" : (288, 352), # height, width
+        "nFpsAvg" : 25,
+        "nFramesAvg" : 75,
+        "fDurationAvg" : 3.0} # seconds
+
+    """
     diVideoSet = {"sName" : "04-chalearn",
         "nClasses" : 10,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
@@ -147,10 +157,6 @@ if __name__ == '__main__':
         "nFpsAvg" : 10,
         "nFramesAvg" : 50, 
         "fDurationAvG" : 5.0} # seconds 
-    #diVideoSet = {"sName" : "01-ledasila",
-    #    "tuShape" : (288, 352), # height, width
-    #    "nFPS" : 25,
-    #    "nFrames" : 75,
-    #    "fDuration" : 3.0} # seconds
+    """
 
     train_mobile_lstm(diVideoSet)
