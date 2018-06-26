@@ -78,7 +78,7 @@ def predict_flows(arFlows:np.array, keFeature, keLSTM, oClasses:VideoClasses) \
 def main():
 	
 	# dataset
-	diVideoSet = {"sName" : "04-chalearn",
+	diVideoSet = {"sName" : "chalearn",
 		"nClasses" : 10,   # number of classes
 		"nFramesNorm" : 40,    # number of frames per video
 		"nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -97,7 +97,8 @@ def main():
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	
-	sModelFile      = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
+	#sModelFile      = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
+	sModelFile       = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
 
 
 	print("\nStarting gesture recognition live demo ... ")

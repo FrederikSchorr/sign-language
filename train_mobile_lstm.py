@@ -101,12 +101,13 @@ def train_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
     #    "nOutput" : 2048}
 
     # directories
+    sFolder = "%03d-%d"%(diVideoSet["nClasses"], diVideoSet["nFramesNorm"])
     sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    #sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    #sImageDir        = "data-temp/%s/%03d/image"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sImageFeatureDir = "data-temp/%s/%03d/image-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    #sOflowDir        = "data-temp/%s/%03d/oflow"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sOflowFeatureDir = "data-temp/%s/%03d/oflow-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sImageDir        = "data-temp/%s/%s/image"%(diVideoSet["sName"], sFolder)
+    sImageFeatureDir = "data-temp/%s/%s/image-mobilenet"%(diVideoSet["sName"], sFolder)
+    sOflowDir        = "data-temp/%s/%s/oflow"%(diVideoSet["sName"], sFolder)
+    sOflowFeatureDir = "data-temp/%s/%s/oflow-mobilenet"%(diVideoSet["sName"], sFolder)
 
     sModelDir        = "model"
 
@@ -129,7 +130,7 @@ def train_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
     # Oflow: Load LSTM and train it
     if bOflow:
         sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
-            "-%s%03d-otvl1-mobile-lstm.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
+            "-%s%03d-flow-mobile-lstm.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
         print("Optical flow log: %s" % sLogPath)
 
         keModelOflow = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
@@ -141,7 +142,7 @@ def train_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
     
 if __name__ == '__main__':
 
-    """diVideoSet = {"sName" : "01-ledasila",
+    """diVideoSet = {"sName" : "ledasila",
         "nClasses" : 21,   # number of classes
         "nFramesNorm" : 64,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -151,7 +152,7 @@ if __name__ == '__main__':
         "fDurationAvg" : 3.0} # seconds
     """
 
-    diVideoSet = {"sName" : "04-chalearn",
+    diVideoSet = {"sName" : "chalearn",
         "nClasses" : 10,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames

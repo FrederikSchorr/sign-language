@@ -1,7 +1,7 @@
 from prepare_mobile_lstm import prepare_mobile_lstm
 from train_mobile_lstm import train_mobile_lstm
 
-"""diVideoSet = {"sName" : "01-ledasila",
+"""diVideoSet = {"sName" : "ledasila",
     "nClasses" : 21,   # number of classes
     "nFramesNorm" : 64,    # number of frames per video
     "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -11,7 +11,7 @@ from train_mobile_lstm import train_mobile_lstm
     "fDurationAvg" : 3.0} # seconds
 
 """
-diVideoSet = {"sName" : "04-chalearn",
+diVideoSet = {"sName" : "chalearn",
     "nClasses" : 10,   # number of classes
     "nFramesNorm" : 40,    # number of frames per video
     "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -21,5 +21,5 @@ diVideoSet = {"sName" : "04-chalearn",
     "fDurationAvg" : 5.0} # seconds 
 
 
-prepare_mobile_lstm(diVideoSet)
+prepare_mobile_lstm(diVideoSet, bImage = False, bOflow = True)
 train_mobile_lstm(diVideoSet, bImage = False, bOflow = True)

@@ -37,7 +37,7 @@ def images_resize_aspectratio(arImages: np.array, nMinDim:int = 256) -> np.array
     return np.array(liImages)
     
 
-def video2frames(sVideoPath:str, nMinDim:int) -> np.array:
+def video2frames(sVideoPath:str, nResizeMinDim:int) -> np.array:
     """ Read video file with OpenCV and return array of frames
     The frame rate depends on the video (and cannot be set)
 
@@ -57,9 +57,9 @@ def video2frames(sVideoPath:str, nMinDim:int) -> np.array:
         (bGrabbed, arFrame) = oVideo.read()
         if bGrabbed == False: break
 
-        if nMinDim != None:
+        if nResizeMinDim != None:
             # resize image
-            arFrameResized = image_resize_aspectratio(arFrame, nMinDim)
+            arFrameResized = image_resize_aspectratio(arFrame, nResizeMinDim)
 
 		# Save the resulting frame to list
         liFrames.append(arFrameResized)
@@ -193,7 +193,8 @@ def video_length(sVideoPath:str) -> float:
     return int(check_output(["mediainfo", '--Inform=Video;%Duration%', sVideoPath]))/1000.0
 
 
-def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = None):
+def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nFramesNorm:int = None, 
+    nResizeMinDim:int = None, tuCropShape:tuple = None, nClasses:int = None):
     """ Extract frames from videos 
     
     Input video structure:
@@ -226,7 +227,20 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = No
     for sVideoPath in dfVideos.sVideoPath:
 
         # slice videos into frames with OpenCV
-        arFrames = video2frames(sVideoPath, nMinDim)
+        arFrames = video2frames(sVideoPath, nResizeMinDim)
+
+        # length and fps
+        fVideoSec = video_length(sVideoPath)
+        nFrames = len(arFrames)
+        fFPS = nFrames / fVideoSec   
+
+        # downsample
+        if nFramesNorm != None: 
+            arFrames = frames_downsample(arFrames, nFramesNorm)
+
+        # crop images
+        if tuCropShape != None:
+            arFrames = images_crop(arFrames, *tuCropShape)
         
         # create diretory (assumed directories see above)
         li_sVideoPath = sVideoPath.split("/")
@@ -236,13 +250,9 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nMinDim:int, nClasses = No
         os.makedirs(sTargetDir, exist_ok=True)
 
         # write frames to .jpg files
-        frames2files(arFrames, sTargetDir)
+        frames2files(arFrames, sTargetDir)         
 
-        # length and fps
-        fVideoSec = video_length(sVideoPath)
-        fFPS = arFrames.shape[0] / fVideoSec            
-
-        print("Video %5d (%.1f sec) to frames %s (%.1f fps) in %s" % (nCounter, fVideoSec, str(arFrames.shape), fFPS, sTargetDir))
+        print("Video %5d | %.1f sec | %d frames | %4.1f fps | saved %s in %s" % (nCounter, fVideoSec, nFrames, fFPS, str(arFrames.shape), sTargetDir))
         nCounter += 1      
 
     return

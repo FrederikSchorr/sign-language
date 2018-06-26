@@ -19,7 +19,7 @@ from opticalflow import framesDir2flowsDir
 from feature_2D import features_2D_load_model, features_2D_predict_generator
 
 
-def prepare_mobile_lstm(diVideoSet):
+def prepare_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -30,18 +30,21 @@ def prepare_mobile_lstm(diVideoSet):
     #    "nOutput" : 2048}
 
     # directories
+    sFolder = "%03d-%d"%(diVideoSet["nClasses"], diVideoSet["nFramesNorm"])
     sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
     sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sImageDir        = "data-temp/%s/%03d/image"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sImageFeatureDir = "data-temp/%s/%03d/image-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sOflowDir        = "data-temp/%s/%03d/oflow"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sOflowFeatureDir = "data-temp/%s/%03d/oflow-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sImageDir        = "data-temp/%s/%s/image"%(diVideoSet["sName"], sFolder)
+    sImageFeatureDir = "data-temp/%s/%s/image-mobilenet"%(diVideoSet["sName"], sFolder)
+    sOflowDir        = "data-temp/%s/%s/oflow"%(diVideoSet["sName"], sFolder)
+    sOflowFeatureDir = "data-temp/%s/%s/oflow-mobilenet"%(diVideoSet["sName"], sFolder)
 
     print("Extracting frames, optical flow and MobileNet features ...")
     print(os.getcwd())
     
     # extract frames from videos
-    videosDir2framesDir(sVideoDir, sImageDir, diVideoSet["nMinDim"])
+    videosDir2framesDir(sVideoDir, sImageDir, nFramesNorm = diVideoSet["nFramesNorm"],
+        nResizeMinDim = diVideoSet["nMinDim"], tuCropShape = diFeature["tuInputShape"][0:2], 
+        nClasses = diVideoSet["nClasses"])
 
     # calculate optical flow
     framesDir2flowsDir(sImageDir, sOflowDir)
@@ -50,19 +53,21 @@ def prepare_mobile_lstm(diVideoSet):
     keModel = features_2D_load_model(diFeature)
 
     # calculate MobileNet features from rgb frames
-    features_2D_predict_generator(sImageDir + "/val",   sImageFeatureDir + "/val",   keModel, diVideoSet["nFramesNorm"])
-    features_2D_predict_generator(sImageDir + "/train", sImageFeatureDir + "/train", keModel, diVideoSet["nFramesNorm"])
+    if bImage:
+        features_2D_predict_generator(sImageDir + "/val",   sImageFeatureDir + "/val",   keModel, diVideoSet["nFramesNorm"])
+        features_2D_predict_generator(sImageDir + "/train", sImageFeatureDir + "/train", keModel, diVideoSet["nFramesNorm"])
 
     # calculate MobileNet features from optical flow
-    features_2D_predict_generator(sOflowDir + "/val",   sOflowFeatureDir + "/val",   keModel, diVideoSet["nFramesNorm"])
-    features_2D_predict_generator(sOflowDir + "/train", sOflowFeatureDir + "/train", keModel, diVideoSet["nFramesNorm"])
+    if bOflow:
+        features_2D_predict_generator(sOflowDir + "/val",   sOflowFeatureDir + "/val",   keModel, diVideoSet["nFramesNorm"])
+        features_2D_predict_generator(sOflowDir + "/train", sOflowFeatureDir + "/train", keModel, diVideoSet["nFramesNorm"])
 
     return
 
 
 if __name__ == '__main__':
     
-    diVideoSet = {"sName" : "04-chalearn",
+    diVideoSet = {"sName" : "chalearn",
         "nClasses" : 10,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
