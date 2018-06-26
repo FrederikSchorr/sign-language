@@ -580,9 +580,9 @@ def Inception_Inflated3d(include_top=True,
     return model
 
 
-def Inception_Inflated3d_Top(classes:int, dropout_prob:bool) -> Model:
+def Inception_Inflated3d_Top(input_shape:tuple, classes:int, dropout_prob:bool) -> Model:
 
-    inputs = Input(shape = (9, 1, 1, 1024), name = "input")
+    inputs = Input(shape = input_shape, name = "input")
     x = Dropout(dropout_prob)(inputs)
 
     x = conv3d_bn(x, classes, 1, 1, 1, padding='same', 
