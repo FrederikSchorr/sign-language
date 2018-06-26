@@ -27,8 +27,8 @@ class OpticalFlow:
         self.arPrev = np.zeros((1,1))
 
         if sName == "tvl1":
-            self.oTVL1 = cv2.DualTVL1OpticalFlow_create(
-                theta = 0.1, nscales = 1, scaleStep = 0.3, warps = 4, epsilon = 0.02)
+            self.oTVL1 = cv2.DualTVL1OpticalFlow_create(warps = 1)
+                # Mo 25.6.2018: (theta = 0.1, nscales = 1, scaleStep = 0.3, warps = 4, epsilon = 0.02)
                 # Very Fast (theta = 0.1, nscales = 1, scaleStep = 0.5, warps = 1, epsilon = 0.1)
                 # Default: (tau=0.25, lambda=0.15, theta=0.3, nscales=5, warps=5, epsilon=0.01, 
                 #innnerIterations=30, outerIterations=10, scaleStep=0.8, gamma=0.0, 

@@ -34,8 +34,8 @@ def prepare_mobile_lstm(diVideoSet):
     sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
     sImageDir        = "data-temp/%s/%03d/image"%(diVideoSet["sName"], diVideoSet["nClasses"])
     sImageFeatureDir = "data-temp/%s/%03d/image-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sOflowDir        = "data-temp/%s/%03d/otvl1"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sOflowFeatureDir = "data-temp/%s/%03d/otvl1-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sOflowDir        = "data-temp/%s/%03d/oflow"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sOflowFeatureDir = "data-temp/%s/%03d/oflow-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
 
     print("Extracting frames, optical flow and MobileNet features ...")
     print(os.getcwd())

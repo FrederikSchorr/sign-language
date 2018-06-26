@@ -10,6 +10,7 @@ import pandas as pd
 
 import cv2
 
+from timer import Timer
 from frame import video2frames, images_normalize, frames_downsample, images_crop
 from frame import images_resize_aspectratio, frames_show, frames2files, files2frames, video_length
 from videocapture import camera_resolution, frame_show, video_show, video_capture
@@ -26,20 +27,24 @@ def predict_frames(arFrames:np.array, keFeature, keLSTM, oClasses:VideoClasses) 
 	_, h, w, _ = keFeature.input_shape
 	_, nFramesNorm, _ = keLSTM.input_shape
 
+	timer = Timer()
+
 	# resize 
 	arFrames = images_crop(images_resize_aspectratio(arFrames, min(h,w)), h, w)
 
-	"""# Translate frames to flows - these are already scaled between [-1.0, 1.0]
+	# Translate frames to flows - these are already scaled between [-1.0, 1.0]
 	print("Calculate optical flow ...")
+	timer.start()
 	arFlows = frames2flows(arFrames, bThirdChannel = True)
-	frames_show(flows2colorimages(arFlows), int(5000 / len(arFlows)))"""
+	print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
+	#frames_show(flows2colorimages(arFlows), int(5000 / len(arFlows)))
 
 	# downsample
-	arFrames = frames_downsample(arFrames, nFramesNorm)
+	arFlows = frames_downsample(arFlows, nFramesNorm)
 
 	# Calculate feature from flows
 	print("Predict features with %s..." % keFeature.name)
-	arFeatures = keFeature.predict(arFrames, verbose=1)
+	arFeatures = keFeature.predict(arFlows, verbose=1)
 
 	# Classify flows with LSTM network
 	print("Final predict with LSTM ...")
@@ -92,7 +97,8 @@ def main():
 	# files
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
-	sModelFile 		 = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
+	sModelFile 	 = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
+	#sModelFile		 = "model/20180625-2354-04-chalearn010-otvl1-mobile-lstm-best.h5"
 
 	print("\nStarting gesture recognition live demo ... ")
 	print(os.getcwd())
@@ -109,7 +115,7 @@ def main():
 	keLSTM = lstm_load(sModelFile, diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses)
 
 	# open a pointer to the webcam video stream
-	oStream = cv2.VideoCapture(1) # 0 for the primary webcam, 1 for attached webcam
+	oStream = cv2.VideoCapture(0) # 0 for the primary webcam, 1 for attached webcam
 	camera_resolution(oStream, nWidth=320, nHeight=240)
 
 	# try to set camera frame rate (close) to training data
@@ -130,8 +136,8 @@ def main():
 			video_show(oStream, "orange", "Recording starts in ", tuRectangle = (h, w), nCountdown = 3)
 			
 			# record video for n sec
-			fElapsed, arFrames, arFlows = video_capture(oStream, "red", "Recording ", \
-				tuRectangle = (h, w), nTimeDuration = int(diVideoSet["fDurationAvg"]), bOpticalFlow = True)
+			fElapsed, arFrames, _ = video_capture(oStream, "red", "Recording ", \
+				tuRectangle = (h, w), nTimeDuration = int(diVideoSet["fDurationAvg"]), bOpticalFlow = False)
 			print("\nCaptured video: %.1f sec, %s, %.1f fps" % \
 				(fElapsed, str(arFrames.shape), len(arFrames)/fElapsed))
 
@@ -139,7 +145,7 @@ def main():
 			frame_show(oStream, "orange", "Translating sign ...", tuRectangle = (h, w))
 
 			# predict video
-			nLabel, sLabel, fProba = predict_flows(arFlows, keFeature, keLSTM, oClasses)
+			nLabel, sLabel, fProba = predict_frames(arFrames, keFeature, keLSTM, oClasses)
 			sResults = "Identified sign: [%d] %s (confidence %.1f%%)" % (nLabel, sLabel, fProba*100.)
 			print(sResults)
 			nCount += 1

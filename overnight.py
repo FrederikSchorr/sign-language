@@ -22,4 +22,4 @@ diVideoSet = {"sName" : "04-chalearn",
 
 
 prepare_mobile_lstm(diVideoSet)
-train_mobile_lstm(diVideoSet)
+train_mobile_lstm(diVideoSet, bImage = False, bOflow = True)
