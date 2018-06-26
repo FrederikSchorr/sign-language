@@ -13,7 +13,7 @@ import cv2
 from timer import Timer
 from frame import video2frames, images_normalize, frames_downsample, images_crop
 from frame import images_resize_aspectratio, frames_show, frames2files, files2frames, video_length
-from videocapture import camera_resolution, frame_show, video_show, video_capture
+from videocapture import video_start, frame_show, video_show, video_capture
 from opticalflow import frames2flows, flows2colorimages, flows2file
 from datagenerator import VideoClasses
 from feature_2D import features_2D_load_model
@@ -32,19 +32,18 @@ def predict_frames(arFrames:np.array, keFeature, keLSTM, oClasses:VideoClasses) 
 	# resize 
 	arFrames = images_crop(images_resize_aspectratio(arFrames, min(h,w)), h, w)
 
-	# Translate frames to flows - these are already scaled between [-1.0, 1.0]
-	print("Calculate optical flow ...")
-	timer.start()
-	arFlows = frames2flows(arFrames, bThirdChannel = True)
-	print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
-	#frames_show(flows2colorimages(arFlows), int(5000 / len(arFlows)))
-
 	# downsample
-	arFlows = frames_downsample(arFlows, nFramesNorm)
+	arFrames = frames_downsample(arFrames, nFramesNorm)
+
+	# Translate frames to flows - these are already scaled between [-1.0, 1.0]
+	print("Calculate optical flow on %d frames ..." % len(arFrames))
+	timer.start()
+	arFlows = frames2flows(arFrames, bThirdChannel = True, bShow = True)
+	print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
 
 	# Calculate feature from flows
 	print("Predict features with %s..." % keFeature.name)
-	arFeatures = keFeature.predict(arFlows, verbose=1)
+	arFeatures = keFeature.predict(arFlows, batch_size = nFramesNorm // 4, verbose=1)
 
 	# Classify flows with LSTM network
 	print("Final predict with LSTM ...")
@@ -97,8 +96,9 @@ def main():
 	# files
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
-	sModelFile 	 = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
-	#sModelFile		 = "model/20180625-2354-04-chalearn010-otvl1-mobile-lstm-best.h5"
+	
+	sModelFile      = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
+
 
 	print("\nStarting gesture recognition live demo ... ")
 	print(os.getcwd())
@@ -115,17 +115,13 @@ def main():
 	keLSTM = lstm_load(sModelFile, diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses)
 
 	# open a pointer to the webcam video stream
-	oStream = cv2.VideoCapture(0) # 0 for the primary webcam, 1 for attached webcam
-	camera_resolution(oStream, nWidth=320, nHeight=240)
-
-	# try to set camera frame rate (close) to training data
-	oStream.set(cv2.CAP_PROP_FPS, diVideoSet["nFpsAvg"])
+	oStream = video_start(device = 1, tuResolution = (320, 240), nFramePerSecond = diVideoSet["nFpsAvg"])
 
 	liVideosDebug = glob.glob(sVideoDir + "/train/*/*.*")
 	nCount = 0
 	sResults = ""
+
 	# loop over action states
-	print("Launch video capture screen ...")
 	while True:
 		# show live video and wait for key stroke
 		key = video_show(oStream, "green", "Press <blank> to start", sResults, tuRectangle = (h, w))

@@ -105,8 +105,8 @@ def train_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
     #sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
     #sImageDir        = "data-temp/%s/%03d/image"%(diVideoSet["sName"], diVideoSet["nClasses"])
     sImageFeatureDir = "data-temp/%s/%03d/image-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    #sOflowDir        = "data-temp/%s/%03d/otvl1"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sOflowFeatureDir = "data-temp/%s/%03d/otvl1-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    #sOflowDir        = "data-temp/%s/%03d/oflow"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sOflowFeatureDir = "data-temp/%s/%03d/oflow-mobilenet"%(diVideoSet["sName"], diVideoSet["nClasses"])
 
     sModelDir        = "model"
 
@@ -141,7 +141,7 @@ def train_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
     
 if __name__ == '__main__':
 
-    diVideoSet = {"sName" : "01-ledasila",
+    """diVideoSet = {"sName" : "01-ledasila",
         "nClasses" : 21,   # number of classes
         "nFramesNorm" : 64,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -149,8 +149,8 @@ if __name__ == '__main__':
         "nFpsAvg" : 25,
         "nFramesAvg" : 75,
         "fDurationAvg" : 3.0} # seconds
-
     """
+
     diVideoSet = {"sName" : "04-chalearn",
         "nClasses" : 10,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
@@ -159,6 +159,5 @@ if __name__ == '__main__':
         "nFpsAvg" : 10,
         "nFramesAvg" : 50, 
         "fDurationAvG" : 5.0} # seconds 
-    """
 
-    train_mobile_lstm(diVideoSet)
+    train_mobile_lstm(diVideoSet, bImage = False, bOflow = True)

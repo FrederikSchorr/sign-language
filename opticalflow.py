@@ -6,6 +6,7 @@ import os
 import glob
 import sys
 import time
+import random
 
 import warnings
 
@@ -14,29 +15,42 @@ import pandas as pd
 
 import cv2
 
-from frame import files2frames, video2frames, frames_show, image_crop, images_crop
+from frame import files2frames, video2frames, frames_show, image_crop, images_crop, video_length
 from timer import Timer
 
 
 
 class OpticalFlow:
-    def __init__(self, sName:str = "tvl1", bThirdChannel:bool = False, fBound:float = 20.):
-        self.sName = sName
+    def __init__(self, sAlgorithm:str = "tvl1-fast", bThirdChannel:bool = False, fBound:float = 20.):
         self.bThirdChannel = bThirdChannel
         self.fBound = fBound
         self.arPrev = np.zeros((1,1))
 
-        if sName == "tvl1":
-            self.oTVL1 = cv2.DualTVL1OpticalFlow_create(warps = 1)
+        if sAlgorithm == "tvl1-fast":
+            self.oTVL1 = cv2.DualTVL1OpticalFlow_create(
+                scaleStep = 0.5, warps = 3, epsilon = 0.02)
                 # Mo 25.6.2018: (theta = 0.1, nscales = 1, scaleStep = 0.3, warps = 4, epsilon = 0.02)
                 # Very Fast (theta = 0.1, nscales = 1, scaleStep = 0.5, warps = 1, epsilon = 0.1)
+            sAlgorithm = "tvl1"
+
+        elif sAlgorithm == "tvl1-warps1":
+            self.oTVL1 = cv2.DualTVL1OpticalFlow_create(warps = 1)
+            sAlgorithm = "tvl1"
+
+        elif sAlgorithm == "tvl1-quality":
+            self.oTVL1 = cv2.DualTVL1OpticalFlow_create()
                 # Default: (tau=0.25, lambda=0.15, theta=0.3, nscales=5, warps=5, epsilon=0.01, 
                 #innnerIterations=30, outerIterations=10, scaleStep=0.8, gamma=0.0, 
                 #medianFiltering=5, useInitialFlow=False)
-        elif sName == "farnback":
+            sAlgorithm = "tvl1"
+
+        elif sAlgorithm == "farnback":
             pass
+
         else: raise ValueError("Unknown optical flow type")
         
+        self.sAlgorithm = sAlgorithm
+
         return
 
 
@@ -65,9 +79,9 @@ class OpticalFlow:
         # get image in black&white
         arCurrent = cv2.cvtColor(arImage, cv2.COLOR_BGR2GRAY)
 
-        if self.sName == "tvl1":
+        if self.sAlgorithm == "tvl1":
             arFlow = self.oTVL1.calc(self.arPrev, arCurrent, None)
-        elif self.sName == "farnback":
+        elif self.sAlgorithm == "farnback":
             arFlow = cv2.calcOpticalFlowFarneback(self.arPrev, arCurrent, flow=None, 
                 pyr_scale=0.5, levels=1, winsize=15, iterations=2, poly_n=5, poly_sigma=1.1, flags=0)
         else: raise ValueError("Unknown optical flow type")
@@ -90,7 +104,7 @@ class OpticalFlow:
 
 
 
-def frames2flows(arFrames:np.array(int), bThirdChannel:bool = False, fBound:float = 20.) -> np.array(float):
+def frames2flows(arFrames:np.array(int), sAlgorithm = "tvl1-fast", bThirdChannel:bool = False, bShow = False, fBound:float = 20.) -> np.array(float):
     """ Calculates optical flow from frames
 
     Returns:
@@ -100,7 +114,7 @@ def frames2flows(arFrames:np.array(int), bThirdChannel:bool = False, fBound:floa
     """
 
     # initialize optical flow calculation
-    oOpticalFlow = OpticalFlow("tvl1", bThirdChannel, fBound)
+    oOpticalFlow = OpticalFlow(sAlgorithm = sAlgorithm, bThirdChannel = bThirdChannel, fBound = fBound)
     
     liFlows = []
     # loop through all frames
@@ -108,6 +122,9 @@ def frames2flows(arFrames:np.array(int), bThirdChannel:bool = False, fBound:floa
         # calc dense optical flow
         arFlow = oOpticalFlow.next(arFrames[i, ...])
         liFlows.append(arFlow)
+        if bShow:
+            cv2.imshow("Optical flow", flow2colorimage(arFlow))
+            cv2.waitKey(1)
 
     return np.array(liFlows)
 
@@ -255,12 +272,16 @@ def unittest_fromfile():
     timer = Timer()
 
     # read test video and show it
-    #arFrames = video2frames("data-set/04-chalearn/train/c049/M_00831.avi", 240)
-    arFrames = video2frames("data-set/01-ledasila/021/train/Banane/Banane---k---vid-20079---lsid-22591.mp4", 240)
-    print("Video frames %s" % str(arFrames.shape))
-    frames_show(arFrames, 50)
+    liVideosDebug = glob.glob("data-set/04-chalearn/010/train/*/*.*")
+    sVideoFile = random.choice(liVideosDebug)
+    fLength = video_length(sVideoFile)
+    arFrames = video2frames(sVideoFile, nMinDim = 240)
+    
+    print("Video: %.1f sec | %s | %s" % (fLength, str(arFrames.shape), sVideoFile))
+    frames_show(arFrames, int(fLength * 1000 / len(arFrames)))
 
     # calc flow and save to disc
+    print("Calculating optical flow ...")
     timer.start()
     arFlows = frames2flows(arFrames)
     print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
@@ -269,7 +290,7 @@ def unittest_fromfile():
 
     # show color flows
     arFlowImages = flows2colorimages(arFlows)
-    frames_show(arFlowImages, 50)  
+    frames_show(arFlowImages, int(fLength * 1000 / len(arFrames)))  
 
     # read flows from directory and display
     #arFlows2 = file2flows("data-temp/unittest", b3channels=True)

@@ -6,14 +6,39 @@ import numpy as np
 import cv2
 
 from timer import Timer
-from frame import image_crop, images_crop
-from opticalflow import OpticalFlow, frames2flows, flow2colorimage
+from frame import image_crop, images_crop, frames_show
+from opticalflow import OpticalFlow, frames2flows, flow2colorimage, flows2colorimages, unittest_fromfile
 
 
-def camera_resolution(oStream, nWidth, nHeight):
+def video_start(device = 0, tuResolution =(320, 240), nFramePerSecond = 30):
+	""" Returns videocapture object/stream
+
+	Parameters:
+		device: 0 for the primary webcam, 1 for attached webcam
+	"""
+	
+	# try to open webcam device
+	oStream = cv2.VideoCapture(device) 
+	if not oStream.isOpened():
+		# try again with inbuilt camera
+		print("Try to initialize inbuilt camera ...")
+		device = 0
+		oStream = cv2.VideoCapture(device)
+		if not oStream.isOpened(): raise ValueError("Could not open webcam")
+
+	# set camera resolution
+	nWidth, nHeight = tuResolution
 	oStream.set(3, nWidth)
 	oStream.set(4, nHeight)
-	return
+
+	# try to set camera frame rate
+	oStream.set(cv2.CAP_PROP_FPS, nFramePerSecond)
+
+	print("Initialized video device %d, with resolution %s and target frame rate %d" % \
+		(device, str(tuResolution), nFramePerSecond))
+
+	return oStream
+
 
 
 def rectangle_text(arImage, sColor, sUpper, sLower = None, tuRectangle = (224, 224)):
@@ -133,10 +158,7 @@ def frame_show(oStream, sColor:str, sText:str, tuRectangle = (224, 224)):
 
 def unittest():
 	# open a pointer to the video stream
-	oStream = cv2.VideoCapture(0)
-	camera_resolution(oStream, 320, 240)
-	fFPS = 32.
-	oStream.set(cv2.CAP_PROP_FPS, fFPS)
+	oStream = video_start(1, (320, 240), 15)
 	#liFrames = []
 
 	print("Launch video capture screen ...")
@@ -193,11 +215,9 @@ def unittest_opticalflow_fromcamera():
     timer = Timer()
 
     # start video capture from webcam
-    oStream = cv2.VideoCapture(0) # 0 for the primary webcam, 1 for external webcam
-    camera_resolution(oStream, nWidth=320, nHeight=240)
+    oStream = video_start(1, (320, 240), 15)
 
     # loop over action states
-    print("Launch video capture screen ...")
     while True:
         # show live video and wait for key stroke
         key = video_show(oStream, "green", "Press <blank> to start", "")
@@ -209,19 +229,20 @@ def unittest_opticalflow_fromcamera():
 				tuRectangle = (224, 224), nCountdown = 3)
             
             # record video for n sec
-            fElapsed, arFrames, arFlows = video_capture(oStream, "red", "Recording ", \
-				tuRectangle = (224, 224), nTimeDuration = 5, bOpticalFlow=True)
+            fElapsed, arFrames, _ = video_capture(oStream, "red", "Recording ", \
+				tuRectangle = (224, 224), nTimeDuration = 5, bOpticalFlow = False)
             print("\nCaptured video: %.1f sec, %s, %.1f fps" % \
                 (fElapsed, str(arFrames.shape), len(arFrames)/fElapsed))
 
             # show orange wait box
             frame_show(oStream, "orange", "Calculating optical flow ...")
+
+			# calculate and show optical flow
             arFrames = images_crop(arFrames, 224, 224)
             timer.start()
             arFlows = frames2flows(arFrames, bThirdChannel=True)
             print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
-
-            #frames_show(flows2colorimages(arFlows), 30)    
+            frames_show(flows2colorimages(arFlows), int(5 * 1000 / len(arFrames)))    
 
         elif key == ord('f'):
             unittest_fromfile()
