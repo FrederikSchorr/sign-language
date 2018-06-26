@@ -63,7 +63,10 @@ def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.
 
     # Helper: Save the model
     os.makedirs(sModelDir, exist_ok=True)
-    checkpointer = keras.callbacks.ModelCheckpoint(
+    checkpointLast = keras.callbacks.ModelCheckpoint(
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-last.h5",
+        verbose = 0)
+    checkpointBest = keras.callbacks.ModelCheckpoint(
         filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-best.h5",
         verbose = 1, save_best_only = True)
 
@@ -81,12 +84,8 @@ def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.
         workers = 1, #4,                 
         use_multiprocessing = False, #True,
         verbose = 1,
-        callbacks=[csv_logger, checkpointer])    
+        callbacks=[csv_logger, checkpointLast, checkpointBest])    
     
-    # save model
-    sModelSaved = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-last.h5"
-    keModel.save(sModelSaved)
-
     return
 
 
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     """
 
     diVideoSet = {"sName" : "chalearn",
-        "nClasses" : 10,   # number of classes
+        "nClasses" : 20,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
         "tuShape" : (240, 320), # height, width
@@ -161,4 +160,4 @@ if __name__ == '__main__':
         "nFramesAvg" : 50, 
         "fDurationAvG" : 5.0} # seconds 
 
-    train_mobile_lstm(diVideoSet, bImage = False, bOflow = True)
+    train_mobile_lstm(diVideoSet, bImage = True, bOflow = True)

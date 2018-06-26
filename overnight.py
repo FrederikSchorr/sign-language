@@ -1,4 +1,4 @@
-from prepare_mobile_lstm import prepare_mobile_lstm
+from prepare_mobile import prepare_mobile
 from train_mobile_lstm import train_mobile_lstm
 
 """diVideoSet = {"sName" : "ledasila",
@@ -21,5 +21,5 @@ diVideoSet = {"sName" : "chalearn",
     "fDurationAvg" : 5.0} # seconds 
 
 
-prepare_mobile_lstm(diVideoSet, bImage = False, bOflow = True)
-train_mobile_lstm(diVideoSet, bImage = False, bOflow = True)
+prepare_mobile(diVideoSet, bImage = True, bOflow = False)
+train_mobile_lstm(diVideoSet, bImage = True, bOflow = False)

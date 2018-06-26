@@ -79,7 +79,7 @@ def main():
 	
 	# dataset
 	diVideoSet = {"sName" : "chalearn",
-		"nClasses" : 10,   # number of classes
+		"nClasses" : 20,   # number of classes
 		"nFramesNorm" : 40,    # number of frames per video
 		"nMinDim" : 240,   # smaller dimension of saved video-frames
 		"tuShape" : (240, 320), # height, width
@@ -99,7 +99,8 @@ def main():
 	
 	#sModelFile      = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
 	#sModelFile       = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
-	sModelFile       = "model/20180626-1458-chalearn010-flow-mobile-lstm-best.h5"
+	#sModelFile       = "model/20180626-1458-chalearn010-flow-mobile-lstm-best.h5"
+	sModelFile       = "model/20180626-1939-chalearn020-flow-mobile-lstm-best.h5"
 
 
 	print("\nStarting gesture recognition live demo ... ")

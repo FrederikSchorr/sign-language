@@ -19,7 +19,7 @@ from opticalflow import framesDir2flowsDir
 from feature_2D import features_2D_load_model, features_2D_predict_generator
 
 
-def prepare_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
+def prepare_mobile(diVideoSet, bImage = True, bOflow = True):
 
     # feature extractor 
     diFeature = {"sName" : "mobilenet",
@@ -44,8 +44,7 @@ def prepare_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
     # extract frames from videos
     if bImage or bOflow:
         videosDir2framesDir(sVideoDir, sImageDir, nFramesNorm = diVideoSet["nFramesNorm"],
-            nResizeMinDim = diVideoSet["nMinDim"], tuCropShape = diFeature["tuInputShape"][0:2], 
-            nClasses = diVideoSet["nClasses"])
+            nResizeMinDim = diVideoSet["nMinDim"], tuCropShape = diFeature["tuInputShape"][0:2])
 
     # calculate optical flow
     if bOflow:
@@ -79,4 +78,4 @@ if __name__ == '__main__':
         "nFramesAvg" : 50, 
         "fDurationAvg" : 5.0} # seconds 
 
-    prepare_mobile_lstm(diVideoSet, bImage = False, bOflow = True)
+    prepare_mobile(diVideoSet, bImage = False, bOflow = True)
