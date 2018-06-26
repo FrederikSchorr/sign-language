@@ -98,7 +98,8 @@ def main():
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	
 	#sModelFile      = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
-	sModelFile       = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
+	#sModelFile       = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
+	sModelFile       = "model/20180626-1458-chalearn010-flow-mobile-lstm-best.h5"
 
 
 	print("\nStarting gesture recognition live demo ... ")

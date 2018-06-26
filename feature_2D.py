@@ -71,12 +71,12 @@ def features_2D_load_model(diFeature:dict) -> keras.Model:
 
 
 def features_2D_predict_generator(sFrameBaseDir:str, sFeatureBaseDir:str, keModel:keras.Model, 
-    nFramesNorm:int = 20):
+    nFramesNorm:int = 40):
 
     # do not (partially) overwrite existing feature directory
-    if os.path.exists(sFeatureBaseDir): 
-        warnings.warn("\nFeature folder " + sFeatureBaseDir + " alredy exists, calculation stopped") 
-        return
+    #if os.path.exists(sFeatureBaseDir): 
+    #    warnings.warn("\nFeature folder " + sFeatureBaseDir + " alredy exists, calculation stopped") 
+    #    return
 
     # prepare frame generator - without shuffling!
     _, h, w, c = keModel.input_shape
@@ -88,20 +88,26 @@ def features_2D_predict_generator(sFrameBaseDir:str, sFeatureBaseDir:str, keMode
     # Predict - loop through all samples
     for _, seVideo in genFrames.dfVideos.iterrows():
         
-        # get normalized frames
-        arX, _ = genFrames.data_generation(seVideo)
-        arFeature = keModel.predict(arX, verbose=0)
-
         # ... sFrameBaseDir / class / videoname=frame-directory
         sVideoName = seVideo.sFrameDir.split("/")[-1]
         sLabel = seVideo.sLabel
         sFeaturePath = sFeatureBaseDir + "/" + sLabel + "/" + sVideoName + ".npy"
 
+        # check if already predicted
+        if os.path.exists(sFeaturePath):
+            print("Video %5d: features already extracted to %s" % (nCount, sFeaturePath))
+            nCount += 1
+            continue
+
+        # get normalized frames
+        arX, _ = genFrames.data_generation(seVideo)
+        arFeature = keModel.predict(arX, verbose=0)
+
         # save to file
         os.makedirs(sFeatureBaseDir + "/" + sLabel, exist_ok = True)
         np.save(sFeaturePath, arFeature)
 
-        print("%5d Features %s saved to %s" % (nCount, str(arFeature.shape), sFeaturePath))
+        print("Video %5d: features %s saved to %s" % (nCount, str(arFeature.shape), sFeaturePath))
         nCount += 1
 
     print("%d features saved to files in %s" % (nCount+1, sFeatureBaseDir))

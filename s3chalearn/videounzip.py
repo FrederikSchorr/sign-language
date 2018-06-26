@@ -152,7 +152,7 @@ def copy_videos(sSourceDir:str, sTargetDir:str, sClasses:str):
 def main():
    
     # directories
-    sVideoDir = "data-set/04-chalearn"
+    sVideoDir = "data-set/chalearn"
 
     print("\nStarting ChaLearn video unzip & move in directory:", os.getcwd())
 
@@ -164,9 +164,9 @@ def main():
     #move_videos(sVideoDir + "/train", sVideoDir + "/val", fFrac = 0.2)
 
     # copy selected classes to new directory
-    sClassSelected = sVideoDir + "/010/class.csv"
-    copy_videos(sVideoDir + "/249/val",   sVideoDir + "/010/val",   sClassSelected)
-    copy_videos(sVideoDir + "/249/train", sVideoDir + "/010/train", sClassSelected)
+    sClassSelected = sVideoDir + "/020/class.csv"
+    copy_videos(sVideoDir + "/249/val",   sVideoDir + "/020/val",   sClassSelected)
+    copy_videos(sVideoDir + "/249/train", sVideoDir + "/020/train", sClassSelected)
 
     return
 

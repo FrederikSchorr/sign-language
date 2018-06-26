@@ -205,9 +205,9 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nFramesNorm:int = None,
     """
 
     # do not (partially) overwrite existing frame directory
-    if os.path.exists(sFrameDir): 
-        warnings.warn("Frame folder " + sFrameDir + " already exists, frame extraction stopped")
-        return 
+    #if os.path.exists(sFrameDir): 
+    #    warnings.warn("Frame folder " + sFrameDir + " already exists, frame extraction stopped")
+    #    return 
 
     # get videos. Assume sVideoDir / train / class / video.mp4
     dfVideos = pd.DataFrame(sorted(glob.glob(sVideoDir + "/*/*/*.*")), columns=["sVideoPath"])
@@ -226,6 +226,25 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nFramesNorm:int = None,
     # loop through all videos and extract frames
     for sVideoPath in dfVideos.sVideoPath:
 
+        # assemble target diretory (assumed directories see above)
+        li_sVideoPath = sVideoPath.split("/")
+        if len(li_sVideoPath) < 4: raise ValueError("Video path should have min 4 components: {}".format(str(li_sVideoPath)))
+        sVideoName = li_sVideoPath[-1].split(".")[0]
+        sTargetDir = sFrameDir + "/" + li_sVideoPath[-3] + "/" + li_sVideoPath[-2] + "/" + sVideoName
+        
+        # check if frames already extracted
+        if nFramesNorm != None and os.path.exists(sTargetDir):
+            nFrames = len(glob.glob(sTargetDir + "/*.*"))
+            if nFrames == nFramesNorm: 
+                print("Video %5d already extracted to %s" % (nCounter, sTargetDir))
+                nCounter += 1
+                continue
+            else: 
+                print("Video %5d: Directory with %d instead of %d frames detected" % (nCounter, nFrames, nFramesNorm))
+        
+        # create target directory
+        os.makedirs(sTargetDir, exist_ok = True)
+
         # slice videos into frames with OpenCV
         arFrames = video2frames(sVideoPath, nResizeMinDim)
 
@@ -242,17 +261,10 @@ def videosDir2framesDir(sVideoDir:str, sFrameDir:str, nFramesNorm:int = None,
         if tuCropShape != None:
             arFrames = images_crop(arFrames, *tuCropShape)
         
-        # create diretory (assumed directories see above)
-        li_sVideoPath = sVideoPath.split("/")
-        if len(li_sVideoPath) < 4: raise ValueError("Video path should have min 4 components: {}".format(str(li_sVideoPath)))
-        sVideoName = li_sVideoPath[-1].split(".")[0]
-        sTargetDir = sFrameDir + "/" + li_sVideoPath[-3] + "/" + li_sVideoPath[-2] + "/" + sVideoName
-        os.makedirs(sTargetDir, exist_ok=True)
-
         # write frames to .jpg files
         frames2files(arFrames, sTargetDir)         
 
-        print("Video %5d | %.1f sec | %d frames | %4.1f fps | saved %s in %s" % (nCounter, fVideoSec, nFrames, fFPS, str(arFrames.shape), sTargetDir))
+        print("Video %5d | %5.1f sec | %d frames | %4.1f fps | saved %s in %s" % (nCounter, fVideoSec, nFrames, fFPS, str(arFrames.shape), sTargetDir))
         nCounter += 1      
 
     return

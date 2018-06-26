@@ -15,7 +15,7 @@ import pandas as pd
 
 import cv2
 
-from frame import files2frames, video2frames, frames_show, image_crop, images_crop, video_length
+from frame import files2frames, video2frames, frames_show, image_crop, images_crop, video_length, frames_downsample
 from timer import Timer
 
 
@@ -224,7 +224,7 @@ def flows2colorimages(arFlows:np.array) -> np.array:
     return np.array(liImages)
 
 
-def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
+def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str, nFramesNorm:int = None, sAlgorithm:str = "tvl1-fast"):
     """ Extract frames from videos 
     
     Input videoframe structure:
@@ -235,9 +235,9 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
     """
 
     # do not (partially) overwrite existing directory
-    if os.path.exists(sFlowBaseDir): 
-        warnings.warn("\nOptical flow folder " + sFlowBaseDir + " alredy exists: flow calculation stopped")
-        return
+    #if os.path.exists(sFlowBaseDir): 
+    #    warnings.warn("\nOptical flow folder " + sFlowBaseDir + " alredy exists: flow calculation stopped")
+    #    return
 
     # get list of directories with frames: ... / sFrameDir/train/class/videodir/frames.jpg
     sCurrentDir = os.getcwd()
@@ -253,12 +253,25 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str):
         # generate target directory
         sFlowDir = sFlowBaseDir + "/" + sFrameDir
 
+        if nFramesNorm != None and os.path.exists(sFlowDir):
+            nFlows = len(glob.glob(sFlowDir + "/*.*"))
+            if nFlows == nFramesNorm: 
+                print("Video %5d: optical flow already extracted to %s" % (nCounter, sFlowDir))
+                nCounter += 1
+                continue
+            else: 
+                print("Video %5d: Directory with %d instead of %d flows detected" % (nCounter, nFlows, nFramesNorm))
+
         # retrieve frame files - in ascending order
         arFrames = files2frames(sFrameBaseDir + "/" + sFrameDir)
-        print("%5d | Calculating optical flow from %s frames to %s" % (nCounter, str(arFrames.shape), sFlowDir))
+
+        # downsample
+        if nFramesNorm != None: 
+            arFrames = frames_downsample(arFrames, nFramesNorm)
 
         # calculate and save optical flow
-        arFlows = frames2flows(arFrames)
+        print("Video %5d: Calc optical flow with %s from %s frames to %s" % (nCounter, sAlgorithm, str(arFrames.shape), sFlowDir))
+        arFlows = frames2flows(arFrames, sAlgorithm = sAlgorithm)
         flows2file(arFlows, sFlowDir)
 
         nCounter += 1      

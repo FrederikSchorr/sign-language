@@ -42,15 +42,18 @@ def prepare_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
     print(os.getcwd())
     
     # extract frames from videos
-    videosDir2framesDir(sVideoDir, sImageDir, nFramesNorm = diVideoSet["nFramesNorm"],
-        nResizeMinDim = diVideoSet["nMinDim"], tuCropShape = diFeature["tuInputShape"][0:2], 
-        nClasses = diVideoSet["nClasses"])
+    if bImage or bOflow:
+        videosDir2framesDir(sVideoDir, sImageDir, nFramesNorm = diVideoSet["nFramesNorm"],
+            nResizeMinDim = diVideoSet["nMinDim"], tuCropShape = diFeature["tuInputShape"][0:2], 
+            nClasses = diVideoSet["nClasses"])
 
     # calculate optical flow
-    framesDir2flowsDir(sImageDir, sOflowDir)
+    if bOflow:
+        framesDir2flowsDir(sImageDir, sOflowDir, nFramesNorm = diVideoSet["nFramesNorm"])
 
     # Load pretrained MobileNet model without top layer 
-    keModel = features_2D_load_model(diFeature)
+    if bImage or bOflow:
+        keModel = features_2D_load_model(diFeature)
 
     # calculate MobileNet features from rgb frames
     if bImage:
@@ -68,7 +71,7 @@ def prepare_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
 if __name__ == '__main__':
     
     diVideoSet = {"sName" : "chalearn",
-        "nClasses" : 10,   # number of classes
+        "nClasses" : 20,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
         "tuShape" : (240, 320), # height, width
@@ -76,4 +79,4 @@ if __name__ == '__main__':
         "nFramesAvg" : 50, 
         "fDurationAvg" : 5.0} # seconds 
 
-    prepare_mobile_lstm(diVideoSet)
+    prepare_mobile_lstm(diVideoSet, bImage = False, bOflow = True)

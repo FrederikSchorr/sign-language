@@ -12,7 +12,7 @@ from train_mobile_lstm import train_mobile_lstm
 
 """
 diVideoSet = {"sName" : "chalearn",
-    "nClasses" : 10,   # number of classes
+    "nClasses" : 20,   # number of classes
     "nFramesNorm" : 40,    # number of frames per video
     "nMinDim" : 240,   # smaller dimension of saved video-frames
     "tuShape" : (240, 320), # height, width
