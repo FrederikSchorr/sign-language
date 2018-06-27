@@ -244,7 +244,7 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str, nFramesNorm:int = No
     os.chdir(sFrameBaseDir)
     liVideos = sorted(glob.glob("*/*/*"))
     os.chdir(sCurrentDir)
-    print("Found %d directories=videos with frames" % len(liVideos))
+    print("Found %d directories=videos with frames in %s" % (len(liVideos), sFrameBaseDir))
 
     # loop over all videos-directories
     nCounter = 0

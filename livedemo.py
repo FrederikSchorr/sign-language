@@ -16,66 +16,14 @@ from frame import images_resize_aspectratio, frames_show, frames2files, files2fr
 from videocapture import video_start, frame_show, video_show, video_capture
 from opticalflow import frames2flows, flows2colorimages, flows2file
 from datagenerator import VideoClasses
-from feature_2D import features_2D_load_model
-from train_mobile_lstm import lstm_load
-from predict_mobile_lstm import predict
+from model_mobile import features_2D_load_model
+from model_lstm import lstm_load
+from model_i3d import I3D_load
+from predict import probability2label
+from predict_mobile_lstm import predict_mobile_lstm
 
 
-def predict_frames(arFrames:np.array, keFeature, keLSTM, oClasses:VideoClasses) \
-	-> (int, str, float):
-	
-	_, h, w, _ = keFeature.input_shape
-	_, nFramesNorm, _ = keLSTM.input_shape
-
-	timer = Timer()
-
-	# resize 
-	arFrames = images_crop(images_resize_aspectratio(arFrames, min(h,w)), h, w)
-
-	# downsample
-	arFrames = frames_downsample(arFrames, nFramesNorm)
-
-	# Translate frames to flows - these are already scaled between [-1.0, 1.0]
-	print("Calculate optical flow on %d frames ..." % len(arFrames))
-	timer.start()
-	arFlows = frames2flows(arFrames, bThirdChannel = True, bShow = True)
-	print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
-
-	# Calculate feature from flows
-	print("Predict features with %s..." % keFeature.name)
-	arFeatures = keFeature.predict(arFlows, batch_size = nFramesNorm // 4, verbose=1)
-
-	# Classify flows with LSTM network
-	print("Final predict with LSTM ...")
-	nLabel, sLabel, fProba = predict(arFeatures, keLSTM, oClasses, nTop = 3)
-
-	return nLabel, sLabel, fProba
-
-
-def predict_flows(arFlows:np.array, keFeature, keLSTM, oClasses:VideoClasses) \
-	-> (int, str, float):
-	
-	_, h, w, _ = keFeature.input_shape
-	_, nFramesNorm, _ = keLSTM.input_shape
-
-	# resize 
-	arFlows = images_crop(images_resize_aspectratio(arFlows, min(h,w)), h, w)
-
-	# downsample
-	arFlows = frames_downsample(arFlows, nFramesNorm)
-
-	# Calculate feature from flows
-	print("Predict %s features ..." % keFeature.name)
-	arFeatures = keFeature.predict(arFlows, verbose=1)
-
-	# Classify flows with LSTM network
-	print("Final predict with LSTM ...")
-	nLabel, sLabel, fProba = predict(arFeatures, keLSTM, oClasses, nTop = 3)
-
-	return nLabel, sLabel, fProba
-
-
-def main():
+def livedemo():
 	
 	# dataset
 	diVideoSet = {"sName" : "chalearn",
@@ -87,21 +35,12 @@ def main():
 		"nFramesAvg" : 50, 
 		"fDurationAvg" : 5.0} # seconds 
 
-	# feature extractor 
-	diFeature = {"sName" : "mobilenet",
-		"tuInputShape" : (224, 224, 3),
-		"tuOutputShape" : (1024, )
-	}
+	sAlgorithm = "i3d"  # "mobile-lstm" or "i3d"
 
 	# files
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	
-	#sModelFile      = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
-	#sModelFile       = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
-	#sModelFile       = "model/20180626-1458-chalearn010-flow-mobile-lstm-best.h5"
-	sModelFile       = "model/20180626-1939-chalearn020-flow-mobile-lstm-best.h5"
-
 
 	print("\nStarting gesture recognition live demo ... ")
 	print(os.getcwd())
@@ -110,19 +49,38 @@ def main():
 	# load label description
 	oClasses = VideoClasses(sClassFile)
 
-	# Load pretrained MobileNet model without top layer 
-	keFeature = features_2D_load_model(diFeature)
-	h, w, c = diFeature["tuInputShape"]
+	if sAlgorithm == "mobile-lstm":
+		#sModelFile = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
+		#sModelFile = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
+		#sModelFile = "model/20180626-1458-chalearn010-flow-mobile-lstm-best.h5"
+		sModelFile = "model/20180626-1939-chalearn020-flow-mobile-lstm-best.h5"
 
-	# Load trained LSTM network
-	keLSTM = lstm_load(sModelFile, diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses)
+		# feature extractor 
+		diFeature = {"sName" : "mobilenet",
+			"tuInputShape" : (224, 224, 3),
+			"tuOutputShape" : (1024, )}
+
+		# Load pretrained MobileNet model without top layer 
+		keMobile = features_2D_load_model(diFeature)
+		h, w, c = diFeature["tuInputShape"]
+		bThirdChannel = True
+
+		# Load trained LSTM network
+		keLSTM = lstm_load(sModelFile, diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses)
+
+	elif sAlgorithm == "i3d":
+		sModelFile = "model/20180627-0729-chalearn020-oflow-i3d-entire-best.h5"
+		h, w, c = 224, 224, 2
+		bThirdChannel = False
+		keI3D = I3D_load(sModelFile, diVideoSet["nFramesNorm"], (h, w, c), oClasses.nClasses)
 
 	# open a pointer to the webcam video stream
 	oStream = video_start(device = 1, tuResolution = (320, 240), nFramePerSecond = diVideoSet["nFpsAvg"])
 
-	liVideosDebug = glob.glob(sVideoDir + "/train/*/*.*")
+	#liVideosDebug = glob.glob(sVideoDir + "/train/*/*.*")
 	nCount = 0
 	sResults = ""
+	timer = Timer()
 
 	# loop over action states
 	while True:
@@ -143,15 +101,35 @@ def main():
 			# show orange wait box
 			frame_show(oStream, "orange", "Translating sign ...", tuRectangle = (h, w))
 
-			# predict video
-			nLabel, sLabel, fProba = predict_frames(arFrames, keFeature, keLSTM, oClasses)
+			# crop and downsample frames
+			arFrames = images_crop(arFrames, h, w)
+			arFrames = frames_downsample(arFrames, diVideoSet["nFramesNorm"])
+
+			# Translate frames to flows - these are already scaled between [-1.0, 1.0]
+			print("Calculate optical flow on %d frames ..." % len(arFrames))
+			timer.start()
+			arFlows = frames2flows(arFrames, bThirdChannel = bThirdChannel, bShow = True)
+			print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
+
+			# predict video from flows
+			if sAlgorithm == "mobile+lstm": arProbas = predict_mobile_lstm(arFlows, keMobile, keLSTM)
+			elif sAlgorithm == "i3d":
+				print("Predict video with %s ..." % (keI3D.name))
+				arX = np.expand_dims(arFlows, axis=0)
+				arProbas = keI3D.predict(arX, verbose = 1)[0]
+
+			# get/print top predictions+labels
+			nLabel, sLabel, fProba = probability2label(arProbas, oClasses, nTop = 3)
+
 			sResults = "Identified sign: [%d] %s (confidence %.1f%%)" % (nLabel, sLabel, fProba*100.)
 			print(sResults)
 			nCount += 1
 
-			# ready for next video	
+		# quit
+		elif key == ord('q'):
+			break
 
-		# debug
+		"""# debug
 		elif key == ord('f'):
 			sVideoFile = random.choice(liVideosDebug)
 			arFrames = video2frames(sVideoFile, 256)
@@ -159,11 +137,7 @@ def main():
 			frames_show(arFrames, int(video_length(sVideoFile)*1000 / len(arFrames)))
 			nLabel, sLabel, fProba = predict_frames(arFrames, keFeature, keLSTM, oClasses)
 			sResults = "Identified sign: [%d] %s (confidence %.0f%%)" % (nLabel, sLabel, fProba*100.)
-
-		# quit
-		elif key == ord('q'):
-			break
-
+		"""
 
 	# do a bit of cleanup
 	oStream.release()
@@ -173,4 +147,4 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+	livedemo()

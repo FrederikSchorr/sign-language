@@ -19,23 +19,15 @@ from opticalflow import framesDir2flowsDir
 from datagenerator import VideoClasses
 from model_i3d import Inception_Inflated3d, Inception_Inflated3d_Top
 from feature import features_3D_predict_generator
-from train_i3d import train_I3D_oflow_end2end
+from train_i3dtop import train_I3D_top
 
 # Image and/or Optical flow pipeline
 bImage = False
 bOflow = True
 
 # dataset
-diVideoSet = {"sName" : "ledasila",
-    "nClasses" : 21,   # number of classes
-    "nFramesNorm" : 40,    # number of frames per video
-    "nMinDim" : 240,   # smaller dimension of saved video-frames
-    "tuShape" : (288, 352), # height, width
-    "nFpsAvg" : 25,
-    "nFramesAvg" : 75,
-    "fDurationAvg" : 3.0} # seconds
 
-"""diVideoSet = {"sName" : "chalearn",
+diVideoSet = {"sName" : "chalearn",
     "nClasses" : 20,   # number of classes
     "nFramesNorm" : 40,    # number of frames per video
     "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -43,7 +35,7 @@ diVideoSet = {"sName" : "ledasila",
     "nFpsAvg" : 10,
     "nFramesAvg" : 50, 
     "fDurationAvg" : 5.0} # seconds 
-"""
+
 # directories
 sFolder = "%03d-%d"%(diVideoSet["nClasses"], diVideoSet["nFramesNorm"])
 sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
@@ -65,7 +57,30 @@ if bImage or bOflow:
 if bOflow:
     framesDir2flowsDir(sImageDir, sOflowDir, nFramesNorm = diVideoSet["nFramesNorm"])
 
-# train I3D network(s)
-train_I3D_oflow_end2end(diVideoSet)
+# initialize
+oClasses = VideoClasses(sClassFile)
+
+# calculate I3D features from rgb frames
+if bImage:
+    # Load pretrained i3d image model without top layer 
+    print("Load pretrained I3D image model ...")
+    keI3Dimage = Inception_Inflated3d(include_top=False, weights='rgb_imagenet_and_kinetics',
+        input_shape = (diVideoSet["nFramesNorm"], 224, 224, 3))
+    # predict features
+    features_3D_predict_generator(sImageDir + "/val",   sImageFeatureDir + "/val",   keI3Dimage, diVideoSet["nFramesNorm"])
+    features_3D_predict_generator(sImageDir + "/train", sImageFeatureDir + "/train", keI3Dimage, diVideoSet["nFramesNorm"])
+
+# calculate I3D features from optical flow
+if bOflow:
+    # Load pretrained i3d flow model without top layer 
+    print("Load pretrained I3D optical flow model ...")
+    keI3DOflow = Inception_Inflated3d(include_top=False, weights='flow_imagenet_and_kinetics',
+       input_shape = (diVideoSet["nFramesNorm"], 224, 224, 2))
+    # predict features
+    features_3D_predict_generator(sOflowDir + "/val",   sOflowFeatureDir + "/val",   keI3DOflow, diVideoSet["nFramesNorm"])
+    features_3D_predict_generator(sOflowDir + "/train", sOflowFeatureDir + "/train", keI3DOflow, diVideoSet["nFramesNorm"])
+
+# train LSTM network(s)
+train_I3D_top(diVideoSet, bImage, bOflow)
 
 # the end

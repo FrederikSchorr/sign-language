@@ -16,7 +16,7 @@ import warnings
 import os
 import numpy as np
 
-from keras.models import Model
+from keras.models import Model, load_model
 from keras import layers
 from keras.layers import Activation
 from keras.layers import Dense
@@ -633,3 +633,20 @@ def add_i3d_top(base_model:Model, classes:int, dropout_prob:bool) -> Model:
     new_model = Model(inputs = base_model.input, outputs = x)"""
 
     return new_model
+
+
+def I3D_load(sPath:str, nFramesNorm:int, tuImageShape:tuple, nClasses:int) -> Model:
+    
+    print("Load trained I3D model from %s ..." % sPath)
+    keModel = load_model(sPath)
+    
+    tuInputShape = keModel.input_shape[1:]
+    tuOutputShape = keModel.output_shape[1:]
+    print("Loaded input shape %s, output shape %s" % (str(tuInputShape), str(tuOutputShape)))
+
+    if tuInputShape != ((nFramesNorm, ) + tuImageShape):
+        raise ValueError("Unexpected I3D input shape")
+    if tuOutputShape != (nClasses, ):
+        raise ValueError("Unexpected I3D output shape")
+
+    return keModel

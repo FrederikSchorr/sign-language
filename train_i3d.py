@@ -70,11 +70,11 @@ def train_I3D_oflow_end2end(diVideoSet):
 
     diTrainTop = {
         "fLearn" : 1e-3,
-        "nEpochs" : 2}
+        "nEpochs" : 3}
 
     diTrainAll = {
         "fLearn" : 1e-4,
-        "nEpochs" : 13}
+        "nEpochs" : 17}
 
     nBatchSize = 4
 
@@ -105,7 +105,7 @@ def train_I3D_oflow_end2end(diVideoSet):
         "-%s%03d-oflow-i3d"%(diVideoSet["sName"], diVideoSet["nClasses"])
     
     # Helper: Save results
-    csv_logger = keras.callbacks.CSVLogger("log/" + sLog + "-acc.csv")
+    csv_logger = keras.callbacks.CSVLogger("log/" + sLog + "-acc.csv", append = True)
 
     # Helper: Save the model
     os.makedirs(sModelDir, exist_ok=True)
