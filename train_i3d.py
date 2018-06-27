@@ -54,11 +54,11 @@ def train_I3D_oflow_end2end(diVideoSet):
 
     diTrainTop = {
         "fLearn" : 1e-3,
-        "nEpochs" : 10}
+        "nEpochs" : 5}
 
     diTrainAll = {
         "fLearn" : 1e-4,
-        "nEpochs" : 10}
+        "nEpochs" : 20}
 
     nBatchSize = 16
 
