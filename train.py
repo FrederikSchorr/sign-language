@@ -16,7 +16,7 @@ import keras
 from datagenerator import VideoClasses, FeaturesGenerator
 
 
-def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.Model, oClasses: VideoClasses,
+def train_feature_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.Model, oClasses: VideoClasses,
     nBatchSize:int=16, nEpoch:int=100, fLearn:float=1e-4):
 
     # Load training data
@@ -37,9 +37,7 @@ def train_generator(sFeatureDir:str, sModelDir:str, sLogPath:str, keModel:keras.
         filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-best.h5",
         verbose = 1, save_best_only = True)
 
-    #optimizer = keras.optimizers.Adam(lr = fLearn)
-    # Use same optimizer as in https://github.com/deepmind/kinetics-i3d
-    optimizer = keras.optimizers.SGD(lr = fLearn, momentum = 0.9, decay = 1e-7)
+    optimizer = keras.optimizers.Adam(lr = fLearn)
     keModel.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
     # Fit!

@@ -19,7 +19,7 @@ from opticalflow import framesDir2flowsDir
 from datagenerator import VideoClasses
 from model_i3d import Inception_Inflated3d, Inception_Inflated3d_Top
 from feature import features_3D_predict_generator
-from train_i3d import train_I3D
+from train_i3dtop import train_I3D_top
 
 # Image and/or Optical flow pipeline
 bImage = True
@@ -80,6 +80,6 @@ if bOflow:
     features_3D_predict_generator(sOflowDir + "/train", sOflowFeatureDir + "/train", keI3DOflow, diVideoSet["nFramesNorm"])
 
 # train LSTM network(s)
-train_I3D(diVideoSet, bImage, bOflow)
+train_I3D_top(diVideoSet, bImage, bOflow)
 
 # the end

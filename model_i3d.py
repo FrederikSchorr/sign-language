@@ -606,7 +606,7 @@ def Inception_Inflated3d_Top(input_shape:tuple, classes:int, dropout_prob:bool) 
 
 def add_i3d_top(base_model:Model, classes:int, dropout_prob:bool) -> Model:
 
-    top_model = Inception_Inflated3d_Top(classes, dropout_prob)
+    top_model = Inception_Inflated3d_Top(base_model.output_shape[1:], classes, dropout_prob)
 
     x = base_model.output
     predictions = top_model(x)

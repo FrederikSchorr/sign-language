@@ -14,7 +14,7 @@ import pandas as pd
 import keras
 
 from datagenerator import VideoClasses, FeaturesGenerator
-from train import train_generator
+from train import train_feature_generator
 from model_lstm import lstm_build
 
 
@@ -52,7 +52,7 @@ def train_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
         print("Image log: %s" % sLogPath)
 
         keModelImage = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
-        train_generator(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
+        train_feature_generator(sImageFeatureDir, sModelDir, sLogPath, keModelImage, oClasses,
             nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     # Oflow: Load LSTM and train it
@@ -62,7 +62,7 @@ def train_mobile_lstm(diVideoSet, bImage = True, bOflow = True):
         print("Optical flow log: %s" % sLogPath)
 
         keModelOflow = lstm_build(diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses, fDropout = 0.5)
-        train_generator(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
+        train_feature_generator(sOflowFeatureDir, sModelDir, sLogPath, keModelOflow, oClasses,
             nBatchSize = 16, nEpoch = 100, fLearn = 1e-4)
 
     return
