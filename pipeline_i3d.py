@@ -26,7 +26,7 @@ bImage = False
 bOflow = True
 
 # dataset
-diVideoSet = {"sName" : "ledasila",
+"""diVideoSet = {"sName" : "ledasila",
     "nClasses" : 21,   # number of classes
     "nFramesNorm" : 40,    # number of frames per video
     "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -34,16 +34,17 @@ diVideoSet = {"sName" : "ledasila",
     "nFpsAvg" : 25,
     "nFramesAvg" : 75,
     "fDurationAvg" : 3.0} # seconds
+"""
 
-"""diVideoSet = {"sName" : "chalearn",
-    "nClasses" : 20,   # number of classes
+diVideoSet = {"sName" : "chalearn",
+    "nClasses" : 249,   # number of classes
     "nFramesNorm" : 40,    # number of frames per video
     "nMinDim" : 240,   # smaller dimension of saved video-frames
     "tuShape" : (240, 320), # height, width
     "nFpsAvg" : 10,
     "nFramesAvg" : 50, 
     "fDurationAvg" : 5.0} # seconds 
-"""
+
 # directories
 sFolder = "%03d-%d"%(diVideoSet["nClasses"], diVideoSet["nFramesNorm"])
 sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
@@ -59,7 +60,7 @@ print(os.getcwd())
 # extract frames from videos
 if bImage or bOflow:
     videosDir2framesDir(sVideoDir, sImageDir, nFramesNorm = diVideoSet["nFramesNorm"],
-        nResizeMinDim = diVideoSet["nMinDim"], tuCropShape = (224, 224))
+        nResizeMinDim = diVideoSet["nMinDim"], tuCropShape = None)
 
 # calculate optical flow
 if bOflow:
