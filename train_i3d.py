@@ -19,7 +19,7 @@ import pandas as pd
 import keras
 
 from datagenerator import VideoClasses
-from train_mobile_lstm import train_generator
+from train import train_generator
 from model_i3d import Inception_Inflated3d_Top
 
 
@@ -82,4 +82,4 @@ if __name__ == '__main__':
         "nFramesAvg" : 50, 
         "fDurationAvG" : 5.0} # seconds 
 
-    train_I3D(diVideoSet, bImage = False, bOflow = True)
+    train_I3D(diVideoSet, bImage = True, bOflow = True)
