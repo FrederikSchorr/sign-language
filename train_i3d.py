@@ -33,7 +33,7 @@ def layers_freeze(keModel:keras.Model) -> keras.Model:
 
 def layers_unfreeze(keModel:keras.Model) -> keras.Model:
     
-    print("Unreeze all %d layers in Model %s" % (len(keModel.layers), keModel.name))
+    print("Unfreeze all %d layers in Model %s" % (len(keModel.layers), keModel.name))
     for layer in keModel.layers:
         layer.trainable = True
 
@@ -70,13 +70,13 @@ def train_I3D_oflow_end2end(diVideoSet):
 
     diTrainTop = {
         "fLearn" : 1e-3,
-        "nEpochs" : 10}
+        "nEpochs" : 1}
 
     diTrainAll = {
         "fLearn" : 1e-4,
         "nEpochs" : 90}
 
-    nBatchSize = 16
+    nBatchSize = 4
 
     print("\nStarting I3D end2end training ...")
     print(os.getcwd())
