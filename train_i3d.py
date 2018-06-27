@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 import keras
+from keras import backend as K
 
 from datagenerator import VideoClasses, FramesGenerator
 from model_i3d import Inception_Inflated3d, add_i3d_top
@@ -39,26 +40,41 @@ def layers_unfreeze(keModel:keras.Model) -> keras.Model:
     return keModel
 
 
+def count_params(keModel:keras.Model):
+
+    trainable_count = int(
+        np.sum([K.count_params(p) for p in set(keModel.trainable_weights)]))
+    non_trainable_count = int(
+        np.sum([K.count_params(p) for p in set(keModel.non_trainable_weights)]))
+
+    print('Total params: {:,}'.format(trainable_count + non_trainable_count))
+    print('Trainable params: {:,}'.format(trainable_count))
+    print('Non-trainable params: {:,}'.format(non_trainable_count))
+    
+    return
+
+
+
 def train_I3D_oflow_end2end(diVideoSet):
    
     # directories
     sFolder = "%03d-%d"%(diVideoSet["nClasses"], diVideoSet["nFramesNorm"])
     sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
-    sImageDir        = "data-temp/%s/%s/image"%(diVideoSet["sName"], sFolder)
-    sImageFeatureDir = "data-temp/%s/%s/image-i3d"%(diVideoSet["sName"], sFolder)
+    #sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    #sImageDir        = "data-temp/%s/%s/image"%(diVideoSet["sName"], sFolder)
+    #sImageFeatureDir = "data-temp/%s/%s/image-i3d"%(diVideoSet["sName"], sFolder)
     sOflowDir        = "data-temp/%s/%s/oflow"%(diVideoSet["sName"], sFolder)
-    sOflowFeatureDir = "data-temp/%s/%s/oflow-i3d"%(diVideoSet["sName"], sFolder)
+    #sOflowFeatureDir = "data-temp/%s/%s/oflow-i3d"%(diVideoSet["sName"], sFolder)
     
     sModelDir        = "model"
 
     diTrainTop = {
         "fLearn" : 1e-3,
-        "nEpochs" : 2}
+        "nEpochs" : 10}
 
     diTrainAll = {
         "fLearn" : 1e-4,
-        "nEpochs" : 20}
+        "nEpochs" : 90}
 
     nBatchSize = 16
 
@@ -93,18 +109,23 @@ def train_I3D_oflow_end2end(diVideoSet):
 
     # Helper: Save the model
     os.makedirs(sModelDir, exist_ok=True)
-    checkpointLast = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-last.h5",
-        verbose = 0)
-    checkpointBest = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-best.h5",
+    cpTopLast = keras.callbacks.ModelCheckpoint(
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-top-last.h5", verbose = 0)
+    cpTopBest = keras.callbacks.ModelCheckpoint(
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-top-best.h5",
         verbose = 1, save_best_only = True)
+    cpAllLast = keras.callbacks.ModelCheckpoint(
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-all-last.h5", verbose = 0)
+    cpAllBest = keras.callbacks.ModelCheckpoint(
+        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-all-best.h5",
+        verbose = 1, save_best_only = True)
+
  
     # Fit top layers
     print("Fit I3D top layers with generator: %s" % (diTrainTop))
     optimizer = keras.optimizers.Adam(lr = diTrainTop["fLearn"])
     keI3DOflow.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    keI3DOflow.summary()    
+    count_params(keI3DOflow)    
 
     keI3DOflow.fit_generator(
         generator = genFramesTrain,
@@ -114,14 +135,14 @@ def train_I3D_oflow_end2end(diVideoSet):
         use_multiprocessing = True,
         max_queue_size = 8, 
         verbose = 1,
-        callbacks=[csv_logger, checkpointLast, checkpointBest])
+        callbacks=[csv_logger, cpTopLast, cpTopBest])
     
     # Fit entire I3D model
     print("Finetune all I3D layers with generator: %s" % (diTrainAll))
     keI3DOflow = layers_unfreeze(keI3DOflow)
     optimizer = keras.optimizers.Adam(lr = diTrainAll["fLearn"])
     keI3DOflow.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    keI3DOflow.summary()    
+    count_params(keI3DOflow)    
 
     keI3DOflow.fit_generator(
         generator = genFramesTrain,
@@ -131,7 +152,7 @@ def train_I3D_oflow_end2end(diVideoSet):
         use_multiprocessing = True,
         max_queue_size = 8, 
         verbose = 1,
-        callbacks=[csv_logger, checkpointLast, checkpointBest])
+        callbacks=[csv_logger, cpAllLast, cpAllBest])
 
     return
     
