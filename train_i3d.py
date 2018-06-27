@@ -36,8 +36,8 @@ def train_I3D(diVideoSet, bImage = True, bOflow = True):
     
     sModelDir        = "model"
 
-    fLearn = 1e-1
-    nEpochs = 30
+    fLearn = 1e-4
+    nEpochs = 100
     nBatchSize = 16
 
     print("\nStarting I3D top training ...")
@@ -53,7 +53,7 @@ def train_I3D(diVideoSet, bImage = True, bOflow = True):
         print("Load I3D image top model ...")
 
         keI3DtopImage = Inception_Inflated3d_Top((4, 1, 1, 1024), oClasses.nClasses, dropout_prob=0.5)
-        #keI3DtopImage.summary()
+        keI3DtopImage.summary()
         train_generator(sImageFeatureDir, sModelDir, sLogPath, keI3DtopImage, oClasses,
             nBatchSize, nEpochs, fLearn)
 
