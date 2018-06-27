@@ -70,11 +70,11 @@ def train_I3D_oflow_end2end(diVideoSet):
 
     diTrainTop = {
         "fLearn" : 1e-3,
-        "nEpochs" : 1}
+        "nEpochs" : 3}
 
     diTrainAll = {
         "fLearn" : 1e-4,
-        "nEpochs" : 90}
+        "nEpochs" : 12}
 
     nBatchSize = 4
 
@@ -101,26 +101,21 @@ def train_I3D_oflow_end2end(diVideoSet):
     keI3DOflow = add_i3d_top(keI3DOflow, oClasses.nClasses, dropout_prob=0.5)
         
     # Prep logging
-    sLogPath = "log/" + time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
-        "-%s%03d-oflow-i3d.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
+    sLog = time.strftime("%Y%m%d-%H%M", time.gmtime()) + \
+        "-%s%03d-oflow-i3d"%(diVideoSet["sName"], diVideoSet["nClasses"])
     
     # Helper: Save results
-    csv_logger = keras.callbacks.CSVLogger(sLogPath.split(".")[0] + "-acc.csv")
+    csv_logger = keras.callbacks.CSVLogger("log/" + sLog + "-acc.csv")
 
     # Helper: Save the model
     os.makedirs(sModelDir, exist_ok=True)
-    cpTopLast = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-top-last.h5", verbose = 0)
-    cpTopBest = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-top-best.h5",
+    cpTopLast = keras.callbacks.ModelCheckpoint(filepath = sModelDir + "/" + sLog + "-above-last.h5", verbose = 0)
+    cpTopBest = keras.callbacks.ModelCheckpoint(filepath = sModelDir + "/" + sLog + "-above-best.h5",
         verbose = 1, save_best_only = True)
-    cpAllLast = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-all-last.h5", verbose = 0)
-    cpAllBest = keras.callbacks.ModelCheckpoint(
-        filepath = sModelDir + "/" + (sLogPath.split("/")[-1]).split(".")[0] + "-all-best.h5",
+    cpAllLast = keras.callbacks.ModelCheckpoint(filepath = sModelDir + "/" + sLog + "-entire-last.h5", verbose = 0)
+    cpAllBest = keras.callbacks.ModelCheckpoint(filepath = sModelDir + "/" + sLog + "-entire-best.h5",
         verbose = 1, save_best_only = True)
 
- 
     # Fit top layers
     print("Fit I3D top layers with generator: %s" % (diTrainTop))
     optimizer = keras.optimizers.Adam(lr = diTrainTop["fLearn"])
