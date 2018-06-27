@@ -28,6 +28,7 @@ def image_resize_aspectratio(arImage: np.array, nMinDim:int = 256) -> np.array:
 
     return arImage
 
+
 def images_resize_aspectratio(arImages: np.array, nMinDim:int = 256) -> np.array:
     nImages, _, _, _ = arImages.shape
     liImages = []
@@ -175,7 +176,6 @@ def images_normalize(arFrames:np.array, nFrames:int, nHeight:int, nWidth:int, bR
         if np.max(np.abs(arFrames)) > 1.0: warnings.warn("Images not normalized")
 
     return arFrames
-
 
 
 def frames_show(arFrames:np.array, nWaitMilliSec:int = 100):

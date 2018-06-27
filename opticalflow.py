@@ -129,6 +129,18 @@ def frames2flows(arFrames:np.array(int), sAlgorithm = "tvl1-fast", bThirdChannel
     return np.array(liFlows)
 
 
+def flows_add_third_channel(arFlows:np.array) -> np.array:
+    """ add third empty channel to array of flows
+    """
+    
+    n, h, w, c = arFlows.shape
+    if c != 2: raise ValueError("Expected 2 channels, not %d" % c)
+    
+    arZeros = np.zeros((n, h, w, 1), dtype = np.float32)
+    arFlows3 = np.concatenate((arFlows, arZeros), axis=3)
+
+    return arFlows3
+
 
 def flows2file(arFlows:np.array(float), sTargetDir:str):
     """ Save array of flows (2 channels with values in [-1.0, 1.0]) 
@@ -152,7 +164,6 @@ def flows2file(arFlows:np.array(float), sTargetDir:str):
         cv2.imwrite(sTargetDir + "/flow%03d.jpg"%(i), ar_n_Flow)
 
     return
-
 
 
 def file2flows(sDir:str, b3channels:bool = False) -> np.array:
@@ -214,6 +225,7 @@ def flow2colorimage(ar_f_Flow:np.array(float)) -> np.array(int):
 
     ar_n_bgr = cv2.cvtColor(ar_n_hsv, cv2.COLOR_HSV2BGR)
     return ar_n_bgr
+
 
 def flows2colorimages(arFlows:np.array) -> np.array:
     n, _, _, _ = arFlows.shape
@@ -277,7 +289,6 @@ def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str, nFramesNorm:int = No
         nCounter += 1      
 
     return
-
 
 
 def unittest_fromfile():

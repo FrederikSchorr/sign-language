@@ -60,7 +60,7 @@ def rectangle_text(arImage, sColor, sUpper, sLower = None, tuRectangle = (224, 2
 
 	# display a text to the frame 
 	font = cv2.FONT_HERSHEY_SIMPLEX
-	fFontSize = 0.7
+	fFontSize = 0.5
 	textSize = cv2.getTextSize(sUpper, font, 1.0, 2)[0]
 	cv2.putText(arImageNew, sUpper, (x1 + 10, y1 + textSize[1] + 10), font, fFontSize, bgr, 2)	
 

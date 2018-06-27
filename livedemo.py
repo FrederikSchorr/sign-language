@@ -14,7 +14,7 @@ from timer import Timer
 from frame import video2frames, images_normalize, frames_downsample, images_crop
 from frame import images_resize_aspectratio, frames_show, frames2files, files2frames, video_length
 from videocapture import video_start, frame_show, video_show, video_capture
-from opticalflow import frames2flows, flows2colorimages, flows2file
+from opticalflow import frames2flows, flows2colorimages, flows2file, flows_add_third_channel
 from datagenerator import VideoClasses
 from model_mobile import features_2D_load_model
 from model_lstm import lstm_load
@@ -35,7 +35,8 @@ def livedemo():
 		"nFramesAvg" : 50, 
 		"fDurationAvg" : 5.0} # seconds 
 
-	sAlgorithm = "i3d"  # "mobile-lstm" or "i3d"
+	bAlgoMobileLSTM = False
+	bAlgoI3D = True
 
 	# files
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
@@ -49,7 +50,7 @@ def livedemo():
 	# load label description
 	oClasses = VideoClasses(sClassFile)
 
-	if sAlgorithm == "mobile-lstm":
+	if bAlgoMobileLSTM:
 		#sModelFile = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
 		#sModelFile = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
 		#sModelFile = "model/20180626-1458-chalearn010-flow-mobile-lstm-best.h5"
@@ -62,17 +63,15 @@ def livedemo():
 
 		# Load pretrained MobileNet model without top layer 
 		keMobile = features_2D_load_model(diFeature)
-		h, w, c = diFeature["tuInputShape"]
-		bThirdChannel = True
+		h, w, _ = diFeature["tuInputShape"]
 
 		# Load trained LSTM network
 		keLSTM = lstm_load(sModelFile, diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses)
 
-	elif sAlgorithm == "i3d":
+	if bAlgoI3D:
 		sModelFile = "model/20180627-0729-chalearn020-oflow-i3d-entire-best.h5"
-		h, w, c = 224, 224, 2
-		bThirdChannel = False
-		keI3D = I3D_load(sModelFile, diVideoSet["nFramesNorm"], (h, w, c), oClasses.nClasses)
+		h, w = 224, 224
+		keI3D = I3D_load(sModelFile, diVideoSet["nFramesNorm"], (h, w, 2), oClasses.nClasses)
 
 	# open a pointer to the webcam video stream
 	oStream = video_start(device = 1, tuResolution = (320, 240), nFramePerSecond = diVideoSet["nFpsAvg"])
@@ -108,18 +107,20 @@ def livedemo():
 			# Translate frames to flows - these are already scaled between [-1.0, 1.0]
 			print("Calculate optical flow on %d frames ..." % len(arFrames))
 			timer.start()
-			arFlows = frames2flows(arFrames, bThirdChannel = bThirdChannel, bShow = True)
+			arFlows = frames2flows(arFrames, bThirdChannel = False, bShow = True)
 			print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
 
 			# predict video from flows
-			if sAlgorithm == "mobile+lstm": arProbas = predict_mobile_lstm(arFlows, keMobile, keLSTM)
-			elif sAlgorithm == "i3d":
+			if bAlgoMobileLSTM:
+				arFlows3 = flows_add_third_channel(arFlows)
+				arProbas = predict_mobile_lstm(arFlows3, keMobile, keLSTM)
+				nLabel, sLabel, fProba = probability2label(arProbas, oClasses, nTop = 3)
+			
+			if bAlgoI3D:
 				print("Predict video with %s ..." % (keI3D.name))
 				arX = np.expand_dims(arFlows, axis=0)
 				arProbas = keI3D.predict(arX, verbose = 1)[0]
-
-			# get/print top predictions+labels
-			nLabel, sLabel, fProba = probability2label(arProbas, oClasses, nTop = 3)
+				nLabel, sLabel, fProba = probability2label(arProbas, oClasses, nTop = 3)
 
 			sResults = "Identified sign: [%d] %s (confidence %.1f%%)" % (nLabel, sLabel, fProba*100.)
 			print(sResults)

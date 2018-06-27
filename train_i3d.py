@@ -70,11 +70,11 @@ def train_I3D_oflow_end2end(diVideoSet):
 
     diTrainTop = {
         "fLearn" : 1e-3,
-        "nEpochs" : 3}
+        "nEpochs" : 10}
 
     diTrainAll = {
         "fLearn" : 1e-4,
-        "nEpochs" : 17}
+        "nEpochs" : 20}
 
     nBatchSize = 4
 
@@ -153,7 +153,17 @@ def train_I3D_oflow_end2end(diVideoSet):
     
     
 if __name__ == '__main__':
-    diVideoSet = {"sName" : "chalearn",
+
+    diVideoSet = {"sName" : "ledasila",
+        "nClasses" : 21,   # number of classes
+        "nFramesNorm" : 40,    # number of frames per video
+        "nMinDim" : 240,   # smaller dimension of saved video-frames
+        "tuShape" : (288, 352), # height, width
+        "nFpsAvg" : 25,
+        "nFramesAvg" : 75,
+        "fDurationAvg" : 3.0} # seconds
+
+    """diVideoSet = {"sName" : "chalearn",
         "nClasses" : 20,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -161,5 +171,5 @@ if __name__ == '__main__':
         "nFpsAvg" : 10,
         "nFramesAvg" : 50, 
         "fDurationAvG" : 5.0} # seconds 
-
+    """
     train_I3D_oflow_end2end(diVideoSet)
