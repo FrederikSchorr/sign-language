@@ -11,7 +11,6 @@
 *swp
 *mp4
 *corpus
-*csv
 *acc
 *npy
 *hdf5
@@ -22,6 +21,8 @@
 *rar
 *zip
 *gz
+
+log/
 
 sprint/
 reports/
