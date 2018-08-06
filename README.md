@@ -22,7 +22,7 @@ The ChaLearn video descriptions and labels (for train, validation and test data)
 
 You can use [prepare_chalearn.py](prepare_chalearn.py) to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label).
 
-The resulting folder structure may then look similar to ![this](https://drive.google.com/open?id=1yvXylPyLJAPaxwE1RIFh3QpYDw2m1pL7).
+The resulting folder structure may then look similar to ![this](https://github.com/FrederikSchorr/sign-language/tree/master/image/readme_folderstructure.jpg).
 
 
 ## License
