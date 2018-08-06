@@ -1,3 +1,10 @@
+"""
+https://github.com/FrederikSchorr/sign-language
+
+Time measurement utilities
+"""
+
+
 import time
 
 class Timer():

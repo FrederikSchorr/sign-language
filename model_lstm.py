@@ -1,5 +1,7 @@
 """
-Classify human gesture videos
+https://github.com/FrederikSchorr/sign-language
+
+Define or load a Keras LSTM model.
 """
 
 import os

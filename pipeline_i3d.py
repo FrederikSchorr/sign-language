@@ -1,9 +1,14 @@
 """
-From videos extract image frames and optical flow
+https://github.com/FrederikSchorr/sign-language
 
 Assume videos are stored: 
-... sVideoDir / train / class001 / gesture.mp4
-... sVideoDir / val   / class249 / gesture.avi
+... sVideoDir / train / class001 / gesture0027.mp4
+... sVideoDir / val   / class249 / gesture1069.avi
+
+This pipeline
+* extracts frames=images from videos (training + validation)
+* calculates optical flow
+* trains an I3D neural network
 """
 
 import os
@@ -67,6 +72,9 @@ if bOflow:
     framesDir2flowsDir(sImageDir, sOflowDir, nFramesNorm = diVideoSet["nFramesNorm"])
 
 # train I3D network(s)
-train_I3D_oflow_end2end(diVideoSet)
+if bOflow:
+    train_I3D_oflow_end2end(diVideoSet)
+elif bImage:
+    raise ValueError("I3D training with only image data not implemented")
 
 # the end

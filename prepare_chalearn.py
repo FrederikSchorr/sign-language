@@ -1,9 +1,9 @@
 """
+https://github.com/FrederikSchorr/sign-language
+
 Unzip and move videos from ChaLearn dataset
 
-ChaLearn dataset:
-http://chalearnlap.cvc.uab.es/dataset/21/description/
-
+ChaLearn dataset: http://chalearnlap.cvc.uab.es/dataset/21/description/
 """
 
 import numpy as np

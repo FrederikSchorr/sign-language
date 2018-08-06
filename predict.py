@@ -1,5 +1,7 @@
 """
-Classify human motion videos 
+https://github.com/FrederikSchorr/sign-language
+
+Utilities for predicting a output label with a neural network 
 """
 
 import os

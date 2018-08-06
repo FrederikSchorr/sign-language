@@ -1,11 +1,11 @@
 """
-Classify human motion videos from ChaLearn dataset
+https://github.com/FrederikSchorr/sign-language
 
-ChaLearn dataset:
-http://chalearnlap.cvc.uab.es/dataset/21/description/
+In some video classification NN architectures it may be necessary to calculate features 
+from the (video) frames, that are afterwards used for NN training.
 
-Code based on:
-https://github.com/harvitronix/five-video-classification-methods
+Eg in the MobileNet-LSTM architecture, the video frames are first fed into the MobileNet
+and the resulting 1024 **features** saved to disc.
 """
 
 import os
@@ -22,9 +22,13 @@ import keras
 from datagenerator import FramesGenerator
 
 
-
 def features_2D_predict_generator(sFrameBaseDir:str, sFeatureBaseDir:str, keModel:keras.Model, 
     nFramesNorm:int = 40):
+    """
+    Used by the MobileNet-LSTM NN architecture.
+    The (video) frames (2-dimensional) in sFrameBaseDir are fed into keModel (eg MobileNet without top layers)
+    and the resulting features are save to sFeatureBaseDir.
+    """
 
     # do not (partially) overwrite existing feature directory
     #if os.path.exists(sFeatureBaseDir): 
@@ -69,6 +73,13 @@ def features_2D_predict_generator(sFrameBaseDir:str, sFeatureBaseDir:str, keMode
 
 def features_3D_predict_generator(sFrameBaseDir:str, sFeatureBaseDir:str, 
     keModel:keras.Model, nBatchSize:int = 16):
+    """
+    Used by I3D-top-only model.
+    The videos (frames) are fed into keModel (=I3D without top layers) and
+    resulting features are saved to disc. 
+    (Later these features are used to train a small model containing 
+    only the adjusted I3D top layers.)
+    """
 
     # do not (partially) overwrite existing feature directory
     #if os.path.exists(sFeatureBaseDir): 

@@ -1,9 +1,15 @@
 """
-From videos extract image frames and optical flow
+https://github.com/FrederikSchorr/sign-language
 
 Assume videos are stored: 
 ... sVideoDir / train / class001 / gesture.mp4
 ... sVideoDir / val   / class249 / gesture.avi
+
+This pipeline
+* extracts frames=images from videos (training + validation)
+* calculates optical flow
+* calculates MobileNet features from frames and from optical flow
+* trains an LSTM neural network
 """
 
 import os

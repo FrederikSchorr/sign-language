@@ -1,3 +1,17 @@
+"""
+https://github.com/FrederikSchorr/sign-language
+
+This module 
+* launches the webcam, 
+* waits for the start signal from user,
+* captures 5 seconds of video,
+* extracts frames from the video
+* calculates and displays the optical flow,
+* and uses the neural network to predict the sign language gesture.
+* Then start again.
+"""
+
+
 # import the necessary packages
 import time
 import os
@@ -20,7 +34,6 @@ from model_mobile import features_2D_load_model
 from model_lstm import lstm_load
 from model_i3d import I3D_load
 from predict import probability2label
-from predict_mobile_lstm import predict_mobile_lstm
 
 
 def livedemo():
@@ -39,7 +52,6 @@ def livedemo():
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	
-
 	print("\nStarting gesture recognition live demo ... ")
 	print(os.getcwd())
 	print(diVideoSet)

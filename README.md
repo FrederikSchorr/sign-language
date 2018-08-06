@@ -26,7 +26,7 @@ The ChaLearn video descriptions and labels (for train, validation and test data)
 [prepare_chalearn.py](prepare_chalearn.py) is used to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label): ![folderstructure](https://github.com/FrederikSchorr/sign-language/blob/master/image/readme_folderstructure.jpg)
 
 
-## Prepare the video data
+## Prepare the video data 
 
 ### Extract image frames from videos
 [frame.py](frame.py) extracts image frames from each video (using OpenCV) and stores them on disc.
@@ -42,9 +42,9 @@ Optical flow is very effective for this type of video classification, but also v
 
 
 ## Train the neural network
-[train_i3d.py](train_i3d.py) trains the neural network. 
+[train_i3d.py](train_i3d.py) trains the neural network. First only the (randomized) top layers are trained, then the entire (pre-trained) network is fine-tuned.
 
-It uses a pre-trained 3D convolutional neural network, I3D, developed in 2017 by Deepmind, see [here](https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d3364860a_0_169) and [model_i3d.py](model_i3d.py). 
+A pre-trained 3D convolutional neural network, I3D, developed in 2017 by Deepmind is used, see [here](https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d3364860a_0_169) and [model_i3d.py](model_i3d.py). 
 
 Training requires a GPU and is performed through a generator which is provided in [datagenerator.py](datagenerator.py).
 

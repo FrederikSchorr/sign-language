@@ -1,11 +1,7 @@
 """
-Classify human motion videos from ChaLearn dataset
+https://github.com/FrederikSchorr/sign-language
 
-ChaLearn dataset:
-http://chalearnlap.cvc.uab.es/dataset/21/description/
-
-Code based on:
-https://github.com/harvitronix/five-video-classification-methods
+Train a pre-trained I3D convolutional network to classify videos
 """
 
 import os
@@ -56,6 +52,14 @@ def count_params(keModel:keras.Model):
 
 
 def train_I3D_oflow_end2end(diVideoSet):
+    """ 
+    * Loads pretrained I3D model, 
+    * reads optical flow data generated from training videos,
+    * adjusts top-layers adequately for video data,
+    * trains only news top-layers,
+    * then fine-tunes entire neural network,
+    * saves logs and models to disc.
+    """
    
     # directories
     sFolder = "%03d-%d"%(diVideoSet["nClasses"], diVideoSet["nFramesNorm"])
@@ -154,7 +158,7 @@ def train_I3D_oflow_end2end(diVideoSet):
     
 if __name__ == '__main__':
 
-    diVideoSet = {"sName" : "ledasila",
+    """diVideoSet = {"sName" : "ledasila",
         "nClasses" : 21,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -162,8 +166,8 @@ if __name__ == '__main__':
         "nFpsAvg" : 25,
         "nFramesAvg" : 75,
         "fDurationAvg" : 3.0} # seconds
-
-    """diVideoSet = {"sName" : "chalearn",
+    """
+    diVideoSet = {"sName" : "chalearn",
         "nClasses" : 20,   # number of classes
         "nFramesNorm" : 40,    # number of frames per video
         "nMinDim" : 240,   # smaller dimension of saved video-frames
@@ -171,5 +175,5 @@ if __name__ == '__main__':
         "nFpsAvg" : 10,
         "nFramesAvg" : 50, 
         "fDurationAvG" : 5.0} # seconds 
-    """
+    
     train_I3D_oflow_end2end(diVideoSet)

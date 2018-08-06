@@ -1,3 +1,11 @@
+"""
+https://github.com/FrederikSchorr/sign-language
+
+For neural network training the method Keras.model.fit_generator is used. 
+This requires a generator that reads and yields training data to the Keras engine.
+"""
+
+
 import glob
 import os
 import sys
@@ -11,7 +19,9 @@ import keras
 from frame import files2frames, images_normalize, frames_show
 
 class FramesGenerator(keras.utils.Sequence):
-    """Read and yields video frames for Keras.model.fit_generator
+    """Read and yields video frames/optical flow for Keras.model.fit_generator
+    Generator can be used for multi-threading.
+    Substantial initialization and checks upfront, including one-hot-encoding of labels.
     """
 
     def __init__(self, sPath:str, \
@@ -116,9 +126,10 @@ class FramesGenerator(keras.utils.Sequence):
 
 
 class FeaturesGenerator(keras.utils.Sequence):
-    """Reads and yields I3D features for Keras.model.fit_generator
+    """Reads and yields (preprocessed) I3D features for Keras.model.fit_generator
+    Generator can be used for multi-threading.
+    Substantial initialization and checks upfront, including one-hot-encoding of labels.
     """
-
 
     def __init__(self, sPath:str, nBatchSize:int, tuXshape, \
         liClassesFull:list = None, bShuffle:bool = True):
@@ -210,7 +221,9 @@ class FeaturesGenerator(keras.utils.Sequence):
 
 
 class VideoClasses():
-
+    """
+    Loads the video classes (incl descriptions) from a csv file
+    """
     def __init__(self, sClassFile:str):
         # load label description: index, sClass, sLong, sCat, sDetail
         self.dfClass = pd.read_csv(sClassFile)

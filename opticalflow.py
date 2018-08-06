@@ -1,5 +1,7 @@
 """
-Convert frames to opticalflow
+https://github.com/FrederikSchorr/sign-language
+
+Calculate optical flow from frames(=images) and save to disc
 """
 
 import os
@@ -21,6 +23,10 @@ from timer import Timer
 
 
 class OpticalFlow:
+    """ Initialize an OpticalFlow object, 
+    then use next() to calculate optical flow from subsequent frames.
+    Detects first call automatically.
+    """ 
     def __init__(self, sAlgorithm:str = "tvl1-fast", bThirdChannel:bool = False, fBound:float = 20.):
         self.bThirdChannel = bThirdChannel
         self.fBound = fBound
@@ -209,6 +215,8 @@ def file2flows(sDir:str, b3channels:bool = False) -> np.array:
 
 
 def flow2colorimage(ar_f_Flow:np.array(float)) -> np.array(int):
+    """ translate 1 optical flow (with values from -1.0 to 1.0) to an colorful image
+    """
 
     h, w, c = ar_f_Flow.shape
     if not isinstance(ar_f_Flow[0,0,0], np.float32): 
@@ -228,6 +236,8 @@ def flow2colorimage(ar_f_Flow:np.array(float)) -> np.array(int):
 
 
 def flows2colorimages(arFlows:np.array) -> np.array:
+    """ translate many optical flows to colorful images
+    """
     n, _, _, _ = arFlows.shape
     liImages = []
     for i in range(n):
@@ -237,7 +247,7 @@ def flows2colorimages(arFlows:np.array) -> np.array:
 
 
 def framesDir2flowsDir(sFrameBaseDir:str, sFlowBaseDir:str, nFramesNorm:int = None, sAlgorithm:str = "tvl1-fast"):
-    """ Extract frames from videos 
+    """ Calculate optical flow from frames (extracted from videos) 
     
     Input videoframe structure:
     ... sFrameDir / train / class001 / videoname / frames.jpg

@@ -580,7 +580,12 @@ def Inception_Inflated3d(include_top=True,
     return model
 
 
+""" The following helper functions have been added 
+by https://github.com/FrederikSchorr/sign-language """
+
 def Inception_Inflated3d_Top(input_shape:tuple, classes:int, dropout_prob:bool) -> Model:
+    """ Returns adjusted top layers for I3D model, depending on the number of output classes
+    """
 
     inputs = Input(shape = input_shape, name = "input")
     x = Dropout(dropout_prob)(inputs)
@@ -605,6 +610,9 @@ def Inception_Inflated3d_Top(input_shape:tuple, classes:int, dropout_prob:bool) 
 
 
 def add_i3d_top(base_model:Model, classes:int, dropout_prob:bool) -> Model:
+    """ Given an I3D model (without top layers), this function creates the top layers 
+    depending on the number of output classes, and returns the entire model.
+    """
 
     top_model = Inception_Inflated3d_Top(base_model.output_shape[1:], classes, dropout_prob)
 
@@ -613,30 +621,12 @@ def add_i3d_top(base_model:Model, classes:int, dropout_prob:bool) -> Model:
 
     new_model = Model(inputs = base_model.input, output = predictions, name = "i3d_with_top")
 
-    """x = base_model.output
-    x = Dropout(dropout_prob)(x)
-
-    x = conv3d_bn(x, classes, 1, 1, 1, padding='same', 
-            use_bias=True, use_activation_fn=False, use_bn=False, name='Conv3d_6a_1x1')
-
-    num_frames_remaining = int(x.shape[1])
-    x = Reshape((num_frames_remaining, classes))(x)
-
-    # logits (raw scores for each class)
-    x = Lambda(lambda x: K.mean(x, axis=1, keepdims=False),
-                output_shape=lambda s: (s[0], s[2]))(x)
-
-    # final softmax
-    x = Activation('softmax', name='prediction')(x)
-
-    #create graph of new model
-    new_model = Model(inputs = base_model.input, outputs = x)"""
-
     return new_model
 
 
 def I3D_load(sPath:str, nFramesNorm:int, tuImageShape:tuple, nClasses:int) -> Model:
-    
+    """ Keras load_model plus input/output shape checks
+    """
     print("Load trained I3D model from %s ..." % sPath)
     keModel = load_model(sPath)
     

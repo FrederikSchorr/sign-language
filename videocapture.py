@@ -1,3 +1,11 @@
+"""
+https://github.com/FrederikSchorr/sign-language
+
+Utilites to launch webcam, capture/record video, show rectangles & text on screen.
+
+"""
+
+
 # import the necessary packages
 import time
 

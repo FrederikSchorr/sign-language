@@ -1,11 +1,8 @@
 """
-Classify human motion videos from ChaLearn dataset
+https://github.com/FrederikSchorr/sign-language
 
-ChaLearn dataset:
-http://chalearnlap.cvc.uab.es/dataset/21/description/
-
-Code based on:
-https://github.com/harvitronix/five-video-classification-methods
+Load pretrained MobileNet or Inception CNN and perform some checks.
+Models are loaded without top layers, suitable for feature extraction.
 """
 
 import os
