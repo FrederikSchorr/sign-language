@@ -5,7 +5,7 @@
 *DS_store
 *pyc
 *jpg
-*JPG
+*jpg
 *png
 *avi
 *swp
@@ -28,3 +28,5 @@ sprint/
 reports/
 specs/
 old/
+
+!image/*jpg
