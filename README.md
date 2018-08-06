@@ -19,11 +19,16 @@ See here for overview of suitable data-sets for sign-language for deaf people: h
 
 Download the ChaLearn Isolated Gesture Recognition dataset here: http://chalearnlap.cvc.uab.es/dataset/21/description/ (you need to register first)
 
-The ChaLearn video descriptions and labels (for train, val and test data) can be found here: [data_set/chalearn](https://github.com/FrederikSchorr/sign-language/tree/master/data-set/chalearn/_download)
+The ChaLearn video descriptions and labels (for train, validation and test data) can be found here: [data_set/chalearn](https://github.com/FrederikSchorr/sign-language/tree/master/data-set/chalearn/_download)
+
+You can use [prepare_chalearn.py](prepare_chalearn.py) to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label).
+
+The resulting folder structure may then look similar to ![this](https://drive.google.com/open?id=1yvXylPyLJAPaxwE1RIFh3QpYDw2m1pL7).
+
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 
