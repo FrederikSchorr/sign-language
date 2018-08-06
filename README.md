@@ -40,6 +40,8 @@ See [pipeline_i3d.py](pipeline_i3d.py) for the parameters used for the ChaLearn 
 
 Optical flow is very(!) calculation intensive.
 
+## Training the 
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details

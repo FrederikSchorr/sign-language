@@ -29,6 +29,4 @@ reports/
 specs/
 old/
 
-!model/20180627-0729-chalearn020-oflow-i3d-entire-best.h5
-
 !image/*jpg
