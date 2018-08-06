@@ -11,8 +11,7 @@ This code requires at least
 * python 3.6.5
 * tensorflow 1.8.0
 * keras 2.2.0
-* opencv-python 3.4.1.15
-
+* opencv-python 3.
 ## Getting the data
 
 See here for overview of suitable data-sets for sign-language for deaf people: https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d447e7409_0_0
