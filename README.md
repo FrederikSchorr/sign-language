@@ -56,7 +56,8 @@ Training requires a GPU and is performed through a generator which is provided i
 [livedemo.py](livedemo.py) launches the webcam, 
 * waits for the start signal from user,
 * captures 5 seconds of video (using [videocapture.py](videocapture.py)),
-* calculates frames+optical flow,
+* extracts frames from the video
+* calculates and displays the optical flow,
 * and uses the neural network to predict the sign language gesture.
 
 The neural network model is not included in this GitHub repo (too large) but can be downloaded [here](https://drive.google.com/open?id=165fKeQY1AhbMUVnV8MyQrMnNWbO7d3fg) (150 MB).
