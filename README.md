@@ -15,7 +15,7 @@ This code requires at least
 
 For the training of the neural networks a GPU is necessary. The live demo works on an ordinary laptop (without GPU), eg MacBook Pro, i5, 8GB.
   
-## Getting the video data
+## Get the video data
 
 See here for overview of suitable data-sets for sign-language for deaf people: https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d447e7409_0_0
 
@@ -23,35 +23,56 @@ Download the ChaLearn Isolated Gesture Recognition dataset here: http://chalearn
 
 The ChaLearn video descriptions and labels (for train, validation and test data) can be found here: [data_set/chalearn](https://github.com/FrederikSchorr/sign-language/tree/master/data-set/chalearn/_download)
 
-[prepare_chalearn.py](prepare_chalearn.py) is used to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label): ![folderstructure](https://github.com/FrederikSchorr/sign-language/blob/master/image/readme_folderstructure.jpg).
+[prepare_chalearn.py](prepare_chalearn.py) is used to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label): ![folderstructure](https://github.com/FrederikSchorr/sign-language/blob/master/image/readme_folderstructure.jpg)
 
 
 ## Prepare the video data
 
 ### Extract image frames from videos
-[frame.py](frame.py) extracts image frames from each video and stores them on disc.
+[frame.py](frame.py) extracts image frames from each video (using OpenCV) and stores them on disc.
 
 See [pipeline_i3d.py](pipeline_i3d.py) for the parameters used for the ChaLearn dataset:
 * 40 frames per training/test videos (on average 5 seconds duration = approx 8 frames per second)
 * Frames are resized/cropped to 240x320 pixels
 
 ### Calculate optical flow
-[opticalflow.py](opticalflow.py) calculates optical flow from the image frames of a video (and stores them on disc. See [pipeline_i3d.py](pipeline_i3d.py) for usage.
+[opticalflow.py](opticalflow.py) calculates optical flow from the image frames of a video (and stores them on disc). See [pipeline_i3d.py](pipeline_i3d.py) for usage.
 
-Optical flow is very(!) calculation intensive.
+Optical flow is very effective for this type of video classification, but also very calculation intensive, see [here](https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d3364860a_0_122).
 
-## Training the 
+
+## Train the neural network
+[train_i3d.py](train_i3d.py) trains the neural network. 
+
+It uses a pre-trained 3D convolutional neural network, I3D, developed in 2017 by Deepmind, see [here](https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d3364860a_0_169) and [model_i3d.py](model_i3d.py). 
+
+Training requires a GPU and is performed through a generator which is provided in [datagenerator.py](datagenerator.py).
+
+*Note: the code files containing "_mobile_lstm" are used for an alternative NN architecture, see [here](https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d3364860a_0_27).*
+
+
+## Predict during live demo
+
+[livedemo.py](livedemo.py) launches the webcam, 
+* waits for the start signal from user,
+* captures 5 seconds of video (using [videocapture.py](videocapture.py)),
+* calculates frames+optical flow,
+* and uses the neural network to predict the sign language gesture.
+
+The neural network model is not included in this GitHub repo (too large) but can be downloaded [here](https://drive.google.com/open?id=165fKeQY1AhbMUVnV8MyQrMnNWbO7d3fg) (150 MB).
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
 
 ## Acknowledgments
 
 * Inspired by Matt Harveys blog post + repository: *Five video classification methods implemented in Keras and TensorFlow* (Mar 2017)
     * https://blog.coast.ai/five-video-classification-methods-implemented-in-keras-and-tensorflow-99cad29cc0b5
     * https://github.com/harvitronix/five-video-classification-methods
-* The video classification I3D model is introduced in: *Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset* (2017), Joao Carreira, Andrew Zisserman (both Google Deepmind), https://arxiv.org/abs/1705.07750v1
+* [Oscar Koller](https://www-i6.informatik.rwth-aachen.de/~koller/) from RWTH Aachen provided an excellent overview of state-of-the-art research on sign language recognition, including his paper on *Sign Language Translation* (2018) https://www-i6.informatik.rwth-aachen.de/publications/download/1064/Camgoz-CVPR-2018.pdf
+* The I3D video classification model was introduced in: *Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset* (2017), Joao Carreira, Andrew Zisserman (both Google Deepmind), https://arxiv.org/abs/1705.07750v1
 * Keras implementation of above I3D model (Jan 2018): https://github.com/dlpbc/keras-kinetics-i3d
 * ChaLearn dataset by Barcelona University, 249 (isolated) human gestures, 50.000 videos:
 http://chalearnlap.cvc.uab.es/dataset/21/description/
