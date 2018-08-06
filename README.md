@@ -77,3 +77,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 * Keras implementation of above I3D model (Jan 2018): https://github.com/dlpbc/keras-kinetics-i3d
 * ChaLearn dataset by Barcelona University, 249 (isolated) human gestures, 50.000 videos:
 http://chalearnlap.cvc.uab.es/dataset/21/description/
+* This project was developed during the spring 2018 [Data Science Retreat](https://www.datascienceretreat.com/), [Tristan Behrens](http://ai-guru.de/) and [Belal Chaudhary](https://github.com/BelalC) provided valuable coaching.

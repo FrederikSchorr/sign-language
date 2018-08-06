@@ -21,6 +21,7 @@
 *rar
 *zip
 *gz
+*jar
 
 log/
 
@@ -30,5 +31,3 @@ specs/
 old/
 
 !image/*jpg
-
-!model/20180627-0729-chalearn020-oflow-i3d-entire-best.h5
