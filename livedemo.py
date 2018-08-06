@@ -35,9 +35,6 @@ def livedemo():
 		"nFramesAvg" : 50, 
 		"fDurationAvg" : 5.0} # seconds 
 
-	bAlgoMobileLSTM = False
-	bAlgoI3D = True
-
 	# files
 	sClassFile       = "data-set/%s/%03d/class.csv"%(diVideoSet["sName"], diVideoSet["nClasses"])
 	sVideoDir        = "data-set/%s/%03d"%(diVideoSet["sName"], diVideoSet["nClasses"])
@@ -50,28 +47,9 @@ def livedemo():
 	# load label description
 	oClasses = VideoClasses(sClassFile)
 
-	if bAlgoMobileLSTM:
-		#sModelFile = "model/20180623-0429-04-chalearn010-otvl1-mobile-lstm-best.h5"
-		#sModelFile = "model/20180626-1149-04-chalearn010-otvl1-mobile-lstm-best.h5"
-		#sModelFile = "model/20180626-1458-chalearn010-flow-mobile-lstm-best.h5"
-		sModelFile = "model/20180626-1939-chalearn020-flow-mobile-lstm-best.h5"
-
-		# feature extractor 
-		diFeature = {"sName" : "mobilenet",
-			"tuInputShape" : (224, 224, 3),
-			"tuOutputShape" : (1024, )}
-
-		# Load pretrained MobileNet model without top layer 
-		keMobile = features_2D_load_model(diFeature)
-		h, w, _ = diFeature["tuInputShape"]
-
-		# Load trained LSTM network
-		keLSTM = lstm_load(sModelFile, diVideoSet["nFramesNorm"], diFeature["tuOutputShape"][0], oClasses.nClasses)
-
-	if bAlgoI3D:
-		sModelFile = "model/20180627-0729-chalearn020-oflow-i3d-entire-best.h5"
-		h, w = 224, 224
-		keI3D = I3D_load(sModelFile, diVideoSet["nFramesNorm"], (h, w, 2), oClasses.nClasses)
+	sModelFile = "model/20180627-0729-chalearn020-oflow-i3d-entire-best.h5"
+	h, w = 224, 224
+	keI3D = I3D_load(sModelFile, diVideoSet["nFramesNorm"], (h, w, 2), oClasses.nClasses)
 
 	# open a pointer to the webcam video stream
 	oStream = video_start(device = 1, tuResolution = (320, 240), nFramePerSecond = diVideoSet["nFpsAvg"])
@@ -110,19 +88,13 @@ def livedemo():
 			arFlows = frames2flows(arFrames, bThirdChannel = False, bShow = True)
 			print("Optical flow per frame: %.3f" % (timer.stop() / len(arFrames)))
 
-			# predict video from flows
-			if bAlgoMobileLSTM:
-				arFlows3 = flows_add_third_channel(arFlows)
-				arProbas = predict_mobile_lstm(arFlows3, keMobile, keLSTM)
-				nLabel, sLabel, fProba = probability2label(arProbas, oClasses, nTop = 3)
-			
-			if bAlgoI3D:
-				print("Predict video with %s ..." % (keI3D.name))
-				arX = np.expand_dims(arFlows, axis=0)
-				arProbas = keI3D.predict(arX, verbose = 1)[0]
-				nLabel, sLabel, fProba = probability2label(arProbas, oClasses, nTop = 3)
+			# predict video from flows			
+			print("Predict video with %s ..." % (keI3D.name))
+			arX = np.expand_dims(arFlows, axis=0)
+			arProbas = keI3D.predict(arX, verbose = 1)[0]
+			nLabel, sLabel, fProba = probability2label(arProbas, oClasses, nTop = 3)
 
-			sResults = "Identified sign: [%d] %s (confidence %.1f%%)" % (nLabel, sLabel, fProba*100.)
+			sResults = "Sign: %s (%.0f%%)" % (sLabel, fProba*100.)
 			print(sResults)
 			nCount += 1
 

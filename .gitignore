@@ -1,8 +1,7 @@
-*/__pycache__
-*/.ipynb_checkpoints
+*/__pycache__/*
+*/.ipynb_checkpoints/*
 *DS_store
 *pyc
-*.*.pyc
 *jpg
 *JPG
 *png
@@ -21,3 +20,7 @@
 *rar
 *zip
 *gz
+/s*/*
+/specs/*
+/old/*
+/reports/*

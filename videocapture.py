@@ -62,12 +62,12 @@ def rectangle_text(arImage, sColor, sUpper, sLower = None, tuRectangle = (224, 2
 	font = cv2.FONT_HERSHEY_SIMPLEX
 	fFontSize = 0.5
 	textSize = cv2.getTextSize(sUpper, font, 1.0, 2)[0]
-	cv2.putText(arImageNew, sUpper, (x1 + 10, y1 + textSize[1] + 10), font, fFontSize, bgr, 2)	
+	cv2.putText(arImageNew, sUpper, (x1 + 7, y1 + textSize[1] + 7), font, fFontSize, bgr, 2)	
 
 	# 2nd text
 	if (sLower != None):
 		textSize = cv2.getTextSize(sLower, font, 1.0, 2)[0]
-		cv2.putText(arImageNew, sLower, (x1 + 10, nHeigth - y1 - 10), font, fFontSize, bgr, 2)
+		cv2.putText(arImageNew, sLower, (x1 + 7, nHeigth - y1 - 7), font, fFontSize, bgr, 2)
 
 	return arImageNew
 
@@ -156,12 +156,11 @@ def frame_show(oStream, sColor:str, sText:str, tuRectangle = (224, 224)):
 	return
 
 
-def unittest():
+def unittest_videocapture():
 	# open a pointer to the video stream
-	oStream = video_start(1, (320, 240), 15)
+	oStream = video_start(device = 1, tuResolution = (320, 240), nFramePerSecond = 15)
 	#liFrames = []
 
-	print("Launch video capture screen ...")
 	# loop over action states
 	sResults = ""
 	while True:
@@ -171,10 +170,11 @@ def unittest():
 		# start!
 		if key == ord(' '):
 			# countdown n sec
-			video_show(oStream, "orange", "Recording starts in ", None, 3)
+			video_show(oStream, sColor = "orange", sUpper = "Recording starts in ", sLower = None, 
+				tuRectangle = (224, 224), nCountdown = 3)
 			
 			# record video for n sec
-			fElapsed, liFrames = video_capture(oStream, "red", "Recording ", 5)
+			fElapsed, liFrames, _ = video_capture(oStream, "red", "Recording ", nTimeDuration=5, bOpticalFlow=False)
 
 			# show orange wait box
 			frame_show(oStream, "orange", "Translating sign ...")
@@ -259,4 +259,4 @@ def unittest_opticalflow_fromcamera():
 
 
 if __name__ == '__main__':
-    unittest_opticalflow_fromcamera()
+    unittest_videocapture()

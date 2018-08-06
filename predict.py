@@ -31,8 +31,8 @@ def probability2label(arProbas:np.array, oClasses:VideoClasses, nTop:int = 3) ->
         print("Top %d: [%3d] %s (confidence %.1f%%)" % \
             (i+1, arTopLabels[i], sClass, arTopProbas[i]*100.))
         
-    sClass = oClasses.dfClass.sClass[arTopLabels[0]] + " " + oClasses.dfClass.sDetail[arTopLabels[0]]
-    return arTopLabels[0], sClass, arTopProbas[0]
+    #sClass = oClasses.dfClass.sClass[arTopLabels[0]] + " " + oClasses.dfClass.sDetail[arTopLabels[0]]
+    return arTopLabels[0], oClasses.dfClass.sDetail[arTopLabels[0]], arTopProbas[0]
 
 
 def predict_onfeature_generator(sFeatureDir:str, sModelPath:str, oClasses:VideoClasses, nBatchSize:int = 16):    
