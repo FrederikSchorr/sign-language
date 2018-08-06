@@ -20,9 +20,7 @@ Download the ChaLearn Isolated Gesture Recognition dataset here: http://chalearn
 
 The ChaLearn video descriptions and labels (for train, validation and test data) can be found here: [data_set/chalearn](https://github.com/FrederikSchorr/sign-language/tree/master/data-set/chalearn/_download)
 
-You can use [prepare_chalearn.py](prepare_chalearn.py) to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label).
-
-The resulting folder structure may then look similar to ![this](https://github.com/FrederikSchorr/sign-language/blob/master/image/readme_folderstructure.jpg).
+You can use [prepare_chalearn.py](prepare_chalearn.py) to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label): ![folderstructure](https://github.com/FrederikSchorr/sign-language/blob/master/image/readme_folderstructure.jpg).
 
 
 ## License
