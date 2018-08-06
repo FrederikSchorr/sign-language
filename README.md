@@ -11,8 +11,11 @@ This code requires at least
 * python 3.6.5
 * tensorflow 1.8.0
 * keras 2.2.0
-* opencv-python 3.
-## Getting the data
+* opencv-python 3.4.1.15
+
+For the training of the neural networks a GPU is necessary. The live demo works on an ordinary laptop (without GPU), eg MacBook Pro, i5, 8GB.
+  
+## Getting the video data
 
 See here for overview of suitable data-sets for sign-language for deaf people: https://docs.google.com/presentation/d/1KSgJM4jUusDoBsyTuJzTsLIoxWyv6fbBzojI38xYXsc/edit#slide=id.g3d447e7409_0_0
 
@@ -20,8 +23,22 @@ Download the ChaLearn Isolated Gesture Recognition dataset here: http://chalearn
 
 The ChaLearn video descriptions and labels (for train, validation and test data) can be found here: [data_set/chalearn](https://github.com/FrederikSchorr/sign-language/tree/master/data-set/chalearn/_download)
 
-You can use [prepare_chalearn.py](prepare_chalearn.py) to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label): ![folderstructure](https://github.com/FrederikSchorr/sign-language/blob/master/image/readme_folderstructure.jpg).
+[prepare_chalearn.py](prepare_chalearn.py) is used to unzip the videos and sort them by labels (using Keras best-practise 1 folder = 1 label): ![folderstructure](https://github.com/FrederikSchorr/sign-language/blob/master/image/readme_folderstructure.jpg).
 
+
+## Prepare the video data
+
+### Extract image frames from videos
+[frame.py](frame.py) extracts image frames from each video and stores them on disc.
+
+See [pipeline_i3d.py](pipeline_i3d.py) for the parameters used for the ChaLearn dataset:
+* 40 frames per training/test videos (on average 5 seconds duration = approx 8 frames per second)
+* Frames are resized/cropped to 240x320 pixels
+
+### Calculate optical flow
+[opticalflow.py](opticalflow.py) calculates optical flow from the image frames of a video (and stores them on disc. See [pipeline_i3d.py](pipeline_i3d.py) for usage.
+
+Optical flow is very(!) calculation intensive.
 
 ## License
 

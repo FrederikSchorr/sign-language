@@ -102,16 +102,6 @@ def livedemo():
 		elif key == ord('q'):
 			break
 
-		"""# debug
-		elif key == ord('f'):
-			sVideoFile = random.choice(liVideosDebug)
-			arFrames = video2frames(sVideoFile, 256)
-			print("DEBUG: Loaded %s | shape %s" % (sVideoFile, str(arFrames.shape)))
-			frames_show(arFrames, int(video_length(sVideoFile)*1000 / len(arFrames)))
-			nLabel, sLabel, fProba = predict_frames(arFrames, keFeature, keLSTM, oClasses)
-			sResults = "Identified sign: [%d] %s (confidence %.0f%%)" % (nLabel, sLabel, fProba*100.)
-		"""
-
 	# do a bit of cleanup
 	oStream.release()
 	cv2.destroyAllWindows()
