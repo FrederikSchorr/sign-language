@@ -15,7 +15,7 @@ This code requires at least
 * keras 2.2.0
 * opencv-python 3.4.1.15
 
-For the training of the neural networks a GPU is necessary. The live demo works on an ordinary laptop (without GPU), eg MacBook Pro, i5, 8GB.
+For the training of the neural networks a GPU is necessary (eg aws p2.xlarge). The live demo works on an ordinary laptop (without GPU), eg MacBook Pro, i5, 8GB.
   
 ## Get the video data
 
